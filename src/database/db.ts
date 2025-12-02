@@ -60,6 +60,24 @@ export function initDatabase(): Database.Database {
 
     CREATE INDEX IF NOT EXISTS idx_audit_logs_repo 
       ON audit_logs(owner, repo);
+
+    CREATE TABLE IF NOT EXISTS pr_context_cache (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      owner TEXT NOT NULL,
+      repo TEXT NOT NULL,
+      pull_number INTEGER NOT NULL,
+      commit_sha TEXT NOT NULL,
+      context_data TEXT NOT NULL,
+      created_at TEXT NOT NULL,
+      expires_at TEXT NOT NULL,
+      UNIQUE(owner, repo, pull_number, commit_sha)
+    );
+
+    CREATE INDEX IF NOT EXISTS idx_pr_context_cache_lookup 
+      ON pr_context_cache(owner, repo, pull_number, commit_sha);
+
+    CREATE INDEX IF NOT EXISTS idx_pr_context_cache_expires 
+      ON pr_context_cache(expires_at);
   `);
 
   return db;
