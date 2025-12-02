@@ -11,6 +11,9 @@ interface Config {
   openai: {
     apiKey: string;
   };
+  anthropic: {
+    apiKey: string | null;
+  };
   server: {
     port: number;
     nodeEnv: string;
@@ -28,6 +31,10 @@ function getEnvVar(key: string, defaultValue?: string): string {
   return value;
 }
 
+function getOptionalEnvVar(key: string): string | null {
+  return process.env[key] || null;
+}
+
 export const config: Config = {
   github: {
     appId: getEnvVar('GITHUB_APP_ID'),
@@ -36,6 +43,9 @@ export const config: Config = {
   },
   openai: {
     apiKey: getEnvVar('OPENAI_API_KEY'),
+  },
+  anthropic: {
+    apiKey: getOptionalEnvVar('ANTHROPIC_API_KEY'),
   },
   server: {
     port: parseInt(getEnvVar('PORT', '3000'), 10),
