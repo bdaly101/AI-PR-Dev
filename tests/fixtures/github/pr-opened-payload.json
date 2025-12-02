@@ -1,0 +1,47 @@
+{
+  "action": "opened",
+  "number": 1,
+  "pull_request": {
+    "number": 1,
+    "title": "Add user authentication feature",
+    "body": "This PR implements user authentication using JWT tokens.\n\n## Changes\n- Added login endpoint\n- Added JWT token generation\n- Added middleware for authentication",
+    "state": "open",
+    "user": {
+      "login": "testuser",
+      "id": 12345,
+      "type": "User"
+    },
+    "head": {
+      "ref": "feature/auth",
+      "sha": "abc123def456789012345678901234567890abcd"
+    },
+    "base": {
+      "ref": "main",
+      "sha": "def456abc789012345678901234567890abcdef12"
+    },
+    "created_at": "2024-01-15T10:00:00Z",
+    "updated_at": "2024-01-15T10:00:00Z",
+    "additions": 150,
+    "deletions": 20,
+    "changed_files": 5
+  },
+  "repository": {
+    "id": 123456789,
+    "name": "test-repo",
+    "full_name": "test-owner/test-repo",
+    "owner": {
+      "login": "test-owner",
+      "id": 98765
+    },
+    "private": false,
+    "default_branch": "main"
+  },
+  "installation": {
+    "id": 12345
+  },
+  "sender": {
+    "login": "testuser",
+    "id": 12345
+  }
+}
+

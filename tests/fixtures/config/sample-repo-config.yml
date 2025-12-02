@@ -1,0 +1,28 @@
+version: 1
+enabled: true
+mode: reviewer
+
+reviewer:
+  strictness: normal
+  languages: [typescript, javascript]
+  ignorePaths:
+    - '*.test.ts'
+    - '__tests__/**'
+    - 'coverage/**'
+  minSeverity: low
+  maxFilesReviewed: 30
+
+ai:
+  provider: openai
+  model: gpt-4-turbo-preview
+  temperature: 0.3
+
+devAgent:
+  enabled: false
+  allowedCommands:
+    - fix-lints
+    - add-types
+  maxFilesPerPR: 10
+  maxLinesChanged: 200
+  requireApproval: true
+
