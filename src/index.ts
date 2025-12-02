@@ -2,9 +2,13 @@ import Fastify from 'fastify';
 import rateLimit from '@fastify/rate-limit';
 import { webhooks } from './github/webhooks';
 import { config } from './config/env';
+import { initDatabase, closeDatabase } from './database/db';
+import { createLogger, logWebhook, logError } from './utils/logging';
+
+const logger = createLogger();
 
 const fastify = Fastify({
-  logger: true,
+  logger: logger,
 });
 
 // Register rate limiting
@@ -29,7 +33,11 @@ fastify.post('/webhooks/github', async (request, reply) => {
     return;
   }
 
+  const webhookLogger = logWebhook(logger, event, id);
+
   try {
+    webhookLogger.info('Received webhook');
+    
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     await webhooks.verifyAndReceive({
       id,
@@ -38,12 +46,27 @@ fastify.post('/webhooks/github', async (request, reply) => {
       payload: JSON.stringify(request.body),
     });
 
+    webhookLogger.info('Webhook processed successfully');
     reply.code(200).send({ received: true });
   } catch (error) {
-    fastify.log.error({ error }, 'Webhook error');
+    logError(webhookLogger, error, { event, id });
     reply.code(500).send({ error: 'Internal server error' });
   }
 });
+
+// Initialize database
+initDatabase();
+
+// Graceful shutdown
+const shutdown = async () => {
+  fastify.log.info('Shutting down gracefully...');
+  closeDatabase();
+  await fastify.close();
+  process.exit(0);
+};
+
+process.on('SIGTERM', shutdown);
+process.on('SIGINT', shutdown);
 
 // Start server
 const start = async () => {
@@ -53,11 +76,16 @@ const start = async () => {
       host: '0.0.0.0',
     });
 
-    console.log(`Server is running on port ${config.server.port}`);
-    console.log(`Webhook endpoint: http://localhost:${config.server.port}/webhooks/github`);
-    console.log(`Health check: http://localhost:${config.server.port}/health`);
+    logger.info(
+      {
+        port: config.server.port,
+        webhookEndpoint: `/webhooks/github`,
+        healthEndpoint: `/health`,
+      },
+      'Server started successfully'
+    );
   } catch (err) {
-    fastify.log.error(err);
+    logError(logger, err, { context: 'server_startup' });
     process.exit(1);
   }
 };

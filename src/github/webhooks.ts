@@ -2,6 +2,7 @@ import { Webhooks } from '@octokit/webhooks';
 import { config } from '../config/env';
 import { reviewService } from '../services/reviewService';
 import { devAgentService } from '../services/devAgentService';
+import { logger, logPRReview, logError } from '../utils/logging';
 
 export const webhooks = new Webhooks({
   secret: config.github.webhookSecret,
@@ -9,10 +10,18 @@ export const webhooks = new Webhooks({
 
 // Handle pull request events for code review
 webhooks.on('pull_request.opened', async ({ payload }) => {
-  console.log(`PR opened: ${payload.repository.full_name}#${payload.pull_request.number}`);
+  const prLogger = logPRReview(
+    logger,
+    payload.repository.owner.login,
+    payload.repository.name,
+    payload.pull_request.number,
+    { event: 'pull_request.opened', commitSha: payload.pull_request.head.sha }
+  );
+  
+  prLogger.info('PR opened event received');
   
   if (!payload.installation?.id) {
-    console.error('No installation ID found in payload');
+    prLogger.error('No installation ID found in payload');
     return;
   }
 
@@ -25,10 +34,18 @@ webhooks.on('pull_request.opened', async ({ payload }) => {
 });
 
 webhooks.on('pull_request.synchronize', async ({ payload }) => {
-  console.log(`PR synchronized: ${payload.repository.full_name}#${payload.pull_request.number}`);
+  const prLogger = logPRReview(
+    logger,
+    payload.repository.owner.login,
+    payload.repository.name,
+    payload.pull_request.number,
+    { event: 'pull_request.synchronize', commitSha: payload.pull_request.head.sha }
+  );
+  
+  prLogger.info('PR synchronized event received');
   
   if (!payload.installation?.id) {
-    console.error('No installation ID found in payload');
+    prLogger.error('No installation ID found in payload');
     return;
   }
 
@@ -48,15 +65,24 @@ webhooks.on('issue_comment.created', async ({ payload }) => {
   }
 
   const comment = payload.comment.body.trim();
-  console.log(`Comment on PR ${payload.repository.full_name}#${payload.issue.number}: ${comment}`);
+  const prLogger = logPRReview(
+    logger,
+    payload.repository.owner.login,
+    payload.repository.name,
+    payload.issue.number,
+    { event: 'issue_comment.created', comment: comment.substring(0, 100) }
+  );
+
+  prLogger.info('Issue comment created on PR');
 
   if (!payload.installation?.id) {
-    console.error('No installation ID found in payload');
+    prLogger.error('No installation ID found in payload');
     return;
   }
 
   // Handle /ai-fix-lints command
   if (comment.startsWith('/ai-fix-lints')) {
+    prLogger.info('Processing /ai-fix-lints command');
     await devAgentService.handleFixLints(
       payload.repository.owner.login,
       payload.repository.name,
@@ -67,6 +93,7 @@ webhooks.on('issue_comment.created', async ({ payload }) => {
   
   // Handle /ai-review command
   if (comment.startsWith('/ai-review')) {
+    prLogger.info('Processing /ai-review command');
     await reviewService.reviewPullRequest(
       payload.repository.owner.login,
       payload.repository.name,
@@ -77,5 +104,5 @@ webhooks.on('issue_comment.created', async ({ payload }) => {
 });
 
 webhooks.onError((error) => {
-  console.error('Webhook error:', error);
+  logError(logger, error, { context: 'webhook_handler' });
 });

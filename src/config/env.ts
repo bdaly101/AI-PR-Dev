@@ -15,6 +15,9 @@ interface Config {
     port: number;
     nodeEnv: string;
   };
+  database: {
+    path: string;
+  };
 }
 
 function getEnvVar(key: string, defaultValue?: string): string {
@@ -37,5 +40,8 @@ export const config: Config = {
   server: {
     port: parseInt(getEnvVar('PORT', '3000'), 10),
     nodeEnv: getEnvVar('NODE_ENV', 'development'),
+  },
+  database: {
+    path: getEnvVar('DATABASE_PATH', './data/app.db'),
   },
 };

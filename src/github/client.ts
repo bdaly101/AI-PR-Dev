@@ -1,17 +1,37 @@
 import { Octokit } from '@octokit/rest';
 import { createAppAuth } from '@octokit/auth-app';
+import { retry } from '@octokit/plugin-retry';
+import { throttling } from '@octokit/plugin-throttling';
 import { config } from '../config/env';
+
+// Type assertion needed due to plugin type incompatibility between @octokit packages
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const OctokitWithPlugins = Octokit.plugin(retry as any, throttling as any) as any;
 
 export class GitHubClient {
   private octokit: Octokit;
 
   constructor(installationId: number) {
-    this.octokit = new Octokit({
+    this.octokit = new OctokitWithPlugins({
       authStrategy: createAppAuth,
       auth: {
         appId: config.github.appId,
         privateKey: config.github.privateKey,
         installationId,
+      },
+      throttle: {
+        onRateLimit: (retryAfter: number, options: { method: string; url: string }) => {
+          console.warn(
+            `Rate limit hit for ${options.method} ${options.url}. Retrying after ${retryAfter} seconds.`
+          );
+          return true; // retry
+        },
+        onAbuseLimit: (retryAfter: number, options: { method: string; url: string }) => {
+          console.warn(
+            `Abuse limit hit for ${options.method} ${options.url}. Retrying after ${retryAfter} seconds.`
+          );
+          return true; // retry
+        },
       },
     });
   }
