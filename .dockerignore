@@ -1,0 +1,47 @@
+# Dependencies
+node_modules
+
+# Build output
+dist
+
+# Data files
+data
+*.db
+
+# Environment files
+.env
+.env.*
+!.env.example
+
+# Git
+.git
+.gitignore
+
+# IDE
+.vscode
+.idea
+*.swp
+*.swo
+
+# Documentation
+docs
+*.md
+!README.md
+
+# Tests
+tests
+*.test.ts
+coverage
+
+# Logs
+*.log
+npm-debug.log*
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Private keys
+*.pem
+*.key
+

@@ -1,10 +1,11 @@
 import { PRContext } from '../github/prHelpers';
+import { Strictness, getStrictnessGuidelines } from '../config/repoConfig';
 
 /**
- * System prompt for the AI code reviewer
+ * Base system prompt for the AI code reviewer
  * Based on design doc section 9.1
  */
-export const REVIEWER_SYSTEM_PROMPT = `You are an expert code reviewer with deep knowledge of software engineering best practices, security vulnerabilities, and performance optimization. Your role is to:
+const BASE_REVIEWER_SYSTEM_PROMPT = `You are an expert code reviewer with deep knowledge of software engineering best practices, security vulnerabilities, and performance optimization. Your role is to:
 
 1. Identify bugs, security issues, performance problems, and maintainability concerns
 2. Provide constructive, actionable feedback
@@ -49,9 +50,24 @@ Important:
 - Always include at least 2 strengths to provide balanced feedback`;
 
 /**
+ * Default system prompt (normal strictness)
+ */
+export const REVIEWER_SYSTEM_PROMPT = BASE_REVIEWER_SYSTEM_PROMPT;
+
+/**
+ * Build system prompt with strictness level
+ */
+export function buildReviewerSystemPrompt(strictness: Strictness = 'normal'): string {
+  const guidelines = getStrictnessGuidelines(strictness);
+  return `${BASE_REVIEWER_SYSTEM_PROMPT}
+
+${guidelines}`;
+}
+
+/**
  * Build the user prompt for PR review
  */
-export function buildReviewerPrompt(context: PRContext): string {
+export function buildReviewerPrompt(context: PRContext, strictness?: Strictness): string {
   const fileList = context.files
     .filter(f => !f.skipped)
     .map(f => `- ${f.filename} (+${f.additions} -${f.deletions})`)
@@ -79,7 +95,8 @@ Provide a comprehensive code review in JSON format. Remember to:
 1. Identify both strengths and areas for improvement
 2. Be specific about file paths and line numbers in inline comments
 3. Prioritize issues by severity
-4. Provide actionable suggestions`;
+4. Provide actionable suggestions
+${strictness ? `5. Apply ${strictness.toUpperCase()} review standards as instructed` : ''}`;
 }
 
 /**
