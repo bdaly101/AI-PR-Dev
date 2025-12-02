@@ -78,6 +78,27 @@ export function initDatabase(): Database.Database {
 
     CREATE INDEX IF NOT EXISTS idx_pr_context_cache_expires 
       ON pr_context_cache(expires_at);
+
+    CREATE TABLE IF NOT EXISTS metrics (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      date TEXT NOT NULL,
+      owner TEXT NOT NULL,
+      repo TEXT NOT NULL,
+      reviews_count INTEGER NOT NULL DEFAULT 0,
+      reviews_failed INTEGER NOT NULL DEFAULT 0,
+      total_files_reviewed INTEGER NOT NULL DEFAULT 0,
+      total_lines_reviewed INTEGER NOT NULL DEFAULT 0,
+      total_duration_ms INTEGER NOT NULL DEFAULT 0,
+      avg_duration_ms INTEGER NOT NULL DEFAULT 0,
+      ai_provider TEXT,
+      UNIQUE(date, owner, repo)
+    );
+
+    CREATE INDEX IF NOT EXISTS idx_metrics_date 
+      ON metrics(date);
+
+    CREATE INDEX IF NOT EXISTS idx_metrics_repo 
+      ON metrics(owner, repo);
   `);
 
   return db;
