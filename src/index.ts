@@ -1,9 +1,16 @@
 import Fastify from 'fastify';
+import rateLimit from '@fastify/rate-limit';
 import { webhooks } from './github/webhooks';
 import { config } from './config/env';
 
 const fastify = Fastify({
   logger: true,
+});
+
+// Register rate limiting
+fastify.register(rateLimit, {
+  max: 100,
+  timeWindow: '1 minute',
 });
 
 // Health check endpoint
