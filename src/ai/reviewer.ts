@@ -1,8 +1,42 @@
-import OpenAI from 'openai';
-import { config } from '../config/env';
-import { prompts } from './prompts';
+import { PRContext } from '../github/prHelpers';
+import { REVIEWER_SYSTEM_PROMPT, buildReviewerPrompt } from './prompts';
+import { callOpenAI, isOpenAIAvailable } from './providers/openai';
+import { callClaude, isAnthropicAvailable } from './providers/anthropic';
+import { parseAnyReviewResponse, ReviewResponse } from '../validation/schemas';
+import { logger } from '../utils/logging';
+import { AI_DEFAULTS } from '../config/constants';
 
-export interface ReviewResult {
+const reviewerLogger = logger.child({ module: 'ai-reviewer' });
+
+/**
+ * AI Provider type
+ */
+export type AIProvider = 'openai' | 'anthropic';
+
+/**
+ * Options for AI review
+ */
+export interface ReviewOptions {
+  provider?: AIProvider;
+  model?: string;
+  temperature?: number;
+  useFallback?: boolean;
+}
+
+/**
+ * Result of an AI review including metadata
+ */
+export interface ReviewResultWithMeta {
+  review: ReviewResponse;
+  provider: AIProvider;
+  model: string;
+  durationMs: number;
+}
+
+/**
+ * Legacy review result format for backwards compatibility
+ */
+export interface LegacyReviewResult {
   summary: string;
   riskLevel: 'low' | 'medium' | 'high';
   riskJustification: string;
@@ -14,80 +48,262 @@ export interface ReviewResult {
   generalComments: string[];
 }
 
-export interface FileReviewComment {
-  line: number;
-  comment: string;
-}
-
+/**
+ * AI Reviewer class with provider fallback and validation
+ */
 export class AIReviewer {
-  private openai: OpenAI;
+  /**
+   * Review a pull request using AI
+   */
+  async reviewPullRequestContext(
+    context: PRContext,
+    options: ReviewOptions = {}
+  ): Promise<ReviewResultWithMeta> {
+    const {
+      provider = 'openai',
+      model,
+      temperature = AI_DEFAULTS.REVIEW_TEMPERATURE,
+      useFallback = true,
+    } = options;
 
-  constructor() {
-    this.openai = new OpenAI({
-      apiKey: config.openai.apiKey,
-    });
+    const userPrompt = buildReviewerPrompt(context);
+    const startTime = Date.now();
+
+    reviewerLogger.info({
+      provider,
+      owner: context.owner,
+      repo: context.repo,
+      pullNumber: context.pullNumber,
+      filesCount: context.reviewedFiles,
+    }, 'Starting AI review');
+
+    // Try primary provider
+    try {
+      const result = await this.callProvider(
+        provider,
+        REVIEWER_SYSTEM_PROMPT,
+        userPrompt,
+        { model, temperature }
+      );
+
+      const review = parseAnyReviewResponse(JSON.parse(result.content));
+      const durationMs = Date.now() - startTime;
+
+      reviewerLogger.info({
+        provider: result.provider,
+        model: result.model,
+        durationMs,
+        risksCount: review.risks.length,
+        suggestionsCount: review.suggestions.length,
+        inlineCommentsCount: review.inlineComments.length,
+      }, 'AI review completed');
+
+      return {
+        review,
+        provider: result.provider,
+        model: result.model,
+        durationMs,
+      };
+
+    } catch (primaryError) {
+      reviewerLogger.warn({
+        provider,
+        error: primaryError instanceof Error ? primaryError.message : String(primaryError),
+      }, 'Primary AI provider failed');
+
+      // Try fallback provider if enabled
+      if (useFallback) {
+        const fallbackProvider = provider === 'openai' ? 'anthropic' : 'openai';
+        
+        if (this.isProviderAvailable(fallbackProvider)) {
+          reviewerLogger.info({ fallbackProvider }, 'Attempting fallback provider');
+
+          try {
+            const result = await this.callProvider(
+              fallbackProvider,
+              REVIEWER_SYSTEM_PROMPT,
+              userPrompt,
+              { temperature }
+            );
+
+            const review = parseAnyReviewResponse(JSON.parse(result.content));
+            const durationMs = Date.now() - startTime;
+
+            reviewerLogger.info({
+              provider: result.provider,
+              model: result.model,
+              durationMs,
+              usedFallback: true,
+            }, 'AI review completed with fallback provider');
+
+            return {
+              review,
+              provider: result.provider,
+              model: result.model,
+              durationMs,
+            };
+
+          } catch (fallbackError) {
+            reviewerLogger.error({
+              fallbackProvider,
+              error: fallbackError instanceof Error ? fallbackError.message : String(fallbackError),
+            }, 'Fallback provider also failed');
+          }
+        }
+      }
+
+      // Both providers failed
+      throw primaryError;
+    }
   }
 
+  /**
+   * Legacy method for backwards compatibility
+   * Maps old interface to new implementation
+   */
   async reviewPullRequest(
     prTitle: string,
     prDescription: string,
     diff: string
-  ): Promise<ReviewResult> {
-    const prompt = prompts.reviewPR(prTitle, prDescription, diff);
+  ): Promise<LegacyReviewResult> {
+    // Create minimal context for legacy calls
+    const minimalContext: PRContext = {
+      owner: '',
+      repo: '',
+      pullNumber: 0,
+      title: prTitle,
+      description: prDescription,
+      author: 'unknown',
+      baseBranch: 'main',
+      headBranch: 'feature',
+      commitSha: '',
+      totalFiles: 1,
+      totalAdditions: 0,
+      totalDeletions: 0,
+      reviewedFiles: 1,
+      skippedFiles: 0,
+      truncatedFiles: 0,
+      files: [],
+      formattedDiff: diff,
+      warnings: [],
+      fromCache: false,
+      fetchedAt: new Date().toISOString(),
+    };
 
-    const completion = await this.openai.chat.completions.create({
-      model: 'gpt-4',
-      messages: [
-        {
-          role: 'system',
-          content: 'You are an expert code reviewer. Provide thorough, constructive feedback.',
-        },
-        {
-          role: 'user',
-          content: prompt,
-        },
-      ],
-      temperature: 0.3,
-      response_format: { type: 'json_object' },
-    });
-
-    const responseContent = completion.choices[0].message.content || '{}';
-    const review = JSON.parse(responseContent) as ReviewResult;
-
-    return review;
+    const result = await this.reviewPullRequestContext(minimalContext);
+    
+    // Convert new format to legacy format
+    return this.convertToLegacyFormat(result.review);
   }
 
-  async reviewFile(
-    fileName: string,
-    fileContent: string,
-    fileDiff: string
-  ): Promise<FileReviewComment[]> {
-    const prompt = prompts.reviewFile(fileName, fileContent, fileDiff);
+  /**
+   * Convert new ReviewResponse to legacy format
+   */
+  private convertToLegacyFormat(review: ReviewResponse): LegacyReviewResult {
+    // Map severity to riskLevel
+    const riskLevel = review.severity === 'critical' ? 'high' :
+                      review.severity === 'warning' ? 'medium' : 'low';
 
-    const completion = await this.openai.chat.completions.create({
-      model: 'gpt-4',
-      messages: [
-        {
-          role: 'system',
-          content: 'You are an expert code reviewer. Focus on bugs, security issues, and best practices.',
-        },
-        {
-          role: 'user',
-          content: prompt,
-        },
+    // Build risk justification from risks
+    const riskJustification = review.risks.length > 0
+      ? review.risks
+          .sort((a, b) => {
+            const severityOrder = { high: 0, medium: 1, low: 2 };
+            return severityOrder[a.severity] - severityOrder[b.severity];
+          })
+          .slice(0, 3)
+          .map(r => `[${r.category.toUpperCase()}] ${r.description}`)
+          .join('; ')
+      : 'No significant risks identified';
+
+    return {
+      summary: review.summary,
+      riskLevel,
+      riskJustification,
+      inlineComments: review.inlineComments.map(c => ({
+        file: c.path,
+        line: c.line,
+        comment: c.body,
+      })),
+      generalComments: [
+        ...review.strengths.map(s => `✅ ${s}`),
+        ...review.suggestions,
       ],
-      temperature: 0.3,
-      response_format: { type: 'json_object' },
-    });
+    };
+  }
 
-    const responseContent = completion.choices[0].message.content || '[]';
-    try {
-      const comments = JSON.parse(responseContent);
-      return Array.isArray(comments) ? comments : comments.comments || [];
-    } catch {
-      return [];
+  /**
+   * Call the specified AI provider
+   */
+  private async callProvider(
+    provider: AIProvider,
+    systemPrompt: string,
+    userPrompt: string,
+    options: { model?: string; temperature?: number }
+  ): Promise<{ content: string; provider: AIProvider; model: string }> {
+    if (provider === 'openai') {
+      if (!isOpenAIAvailable()) {
+        throw new Error('OpenAI API key not configured');
+      }
+      const model = options.model || AI_DEFAULTS.REVIEW_MODEL;
+      const content = await callOpenAI(systemPrompt, userPrompt, {
+        model,
+        temperature: options.temperature,
+      });
+      return { content, provider: 'openai', model };
+    } else {
+      if (!isAnthropicAvailable()) {
+        throw new Error('Anthropic API key not configured');
+      }
+      const model = options.model || 'claude-3-5-sonnet-20241022';
+      const content = await callClaude(systemPrompt, userPrompt, {
+        model,
+        temperature: options.temperature,
+      });
+      return { content, provider: 'anthropic', model };
     }
+  }
+
+  /**
+   * Check if a provider is available
+   */
+  private isProviderAvailable(provider: AIProvider): boolean {
+    return provider === 'openai' ? isOpenAIAvailable() : isAnthropicAvailable();
   }
 }
 
+// Export singleton instance
 export const aiReviewer = new AIReviewer();
+
+/**
+ * Create mock review response for testing
+ */
+export function createMockReviewResponse(overrides: Partial<ReviewResponse> = {}): ReviewResponse {
+  return {
+    summary: 'This is a mock review for testing purposes.',
+    severity: 'info',
+    strengths: [
+      'Well-structured code',
+      'Good use of TypeScript types',
+    ],
+    risks: [
+      {
+        category: 'maintainability',
+        description: 'Consider adding more inline comments for complex logic',
+        severity: 'low',
+      },
+    ],
+    suggestions: [
+      'Add unit tests for the new functionality',
+      'Consider extracting repeated code into helper functions',
+    ],
+    inlineComments: [
+      {
+        path: 'src/example.ts',
+        line: 10,
+        body: 'This function could benefit from a more descriptive name',
+      },
+    ],
+    ...overrides,
+  };
+}
