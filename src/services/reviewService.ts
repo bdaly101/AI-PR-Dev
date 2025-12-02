@@ -104,6 +104,15 @@ class ReviewService {
         inlineComments
       );
 
+      // Add ai-reviewed label
+      try {
+        await client.addLabels(owner, repo, pullNumber, ['ai-reviewed']);
+        prLogger.debug('Added ai-reviewed label');
+      } catch (labelError) {
+        // Don't fail the review if labeling fails
+        prLogger.warn({ error: labelError }, 'Failed to add ai-reviewed label');
+      }
+
       const duration = Date.now() - startTime;
       prLogger.info({
         duration,
