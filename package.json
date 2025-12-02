@@ -1,0 +1,32 @@
+{
+  "name": "ai-pr-dev",
+  "version": "1.0.0",
+  "description": "AI PR Reviewer & Dev Agent - A GitHub App that automates code reviews using GPT-4 and responds to slash commands",
+  "main": "dist/index.js",
+  "scripts": {
+    "build": "tsc",
+    "start": "node dist/index.js",
+    "dev": "ts-node src/index.ts",
+    "lint": "eslint src --ext .ts",
+    "type-check": "tsc --noEmit"
+  },
+  "keywords": ["github", "ai", "code-review", "gpt-4", "automation"],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "fastify": "^4.25.2",
+    "@octokit/webhooks": "^12.0.10",
+    "@octokit/rest": "^20.0.2",
+    "@octokit/auth-app": "^6.0.3",
+    "openai": "^4.20.1",
+    "dotenv": "^16.3.1"
+  },
+  "devDependencies": {
+    "@types/node": "^20.10.5",
+    "typescript": "^5.3.3",
+    "ts-node": "^10.9.2",
+    "@typescript-eslint/eslint-plugin": "^6.15.0",
+    "@typescript-eslint/parser": "^6.15.0",
+    "eslint": "^8.56.0"
+  }
+}
