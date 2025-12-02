@@ -210,4 +210,55 @@ export class GitHubClient {
     });
     return data.object.sha;
   }
+
+  /**
+   * Add labels to an issue or pull request
+   */
+  async addLabels(owner: string, repo: string, issueNumber: number, labels: string[]) {
+    await this.octokit.issues.addLabels({
+      owner,
+      repo,
+      issue_number: issueNumber,
+      labels,
+    });
+  }
+
+  /**
+   * Remove a label from an issue or pull request
+   */
+  async removeLabel(owner: string, repo: string, issueNumber: number, label: string) {
+    try {
+      await this.octokit.issues.removeLabel({
+        owner,
+        repo,
+        issue_number: issueNumber,
+        name: label,
+      });
+    } catch (error) {
+      // Ignore error if label doesn't exist
+      if (error instanceof Error && !error.message.includes('Label does not exist')) {
+        throw error;
+      }
+    }
+  }
+
+  /**
+   * Get labels on an issue or pull request
+   */
+  async getLabels(owner: string, repo: string, issueNumber: number) {
+    const { data } = await this.octokit.issues.listLabelsOnIssue({
+      owner,
+      repo,
+      issue_number: issueNumber,
+    });
+    return data;
+  }
+
+  /**
+   * Check if a label exists on an issue or pull request
+   */
+  async hasLabel(owner: string, repo: string, issueNumber: number, label: string): Promise<boolean> {
+    const labels = await this.getLabels(owner, repo, issueNumber);
+    return labels.some(l => l.name === label);
+  }
 }
