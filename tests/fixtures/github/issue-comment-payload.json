@@ -1,0 +1,43 @@
+{
+  "action": "created",
+  "issue": {
+    "number": 1,
+    "title": "Add user authentication feature",
+    "state": "open",
+    "pull_request": {
+      "url": "https://api.github.com/repos/test-owner/test-repo/pulls/1"
+    },
+    "user": {
+      "login": "testuser",
+      "id": 12345
+    }
+  },
+  "comment": {
+    "id": 987654321,
+    "body": "/ai-review",
+    "user": {
+      "login": "testuser",
+      "id": 12345
+    },
+    "created_at": "2024-01-15T12:00:00Z"
+  },
+  "repository": {
+    "id": 123456789,
+    "name": "test-repo",
+    "full_name": "test-owner/test-repo",
+    "owner": {
+      "login": "test-owner",
+      "id": 98765
+    },
+    "private": false,
+    "default_branch": "main"
+  },
+  "installation": {
+    "id": 12345
+  },
+  "sender": {
+    "login": "testuser",
+    "id": 12345
+  }
+}
+

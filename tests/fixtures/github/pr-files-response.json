@@ -1,0 +1,39 @@
+[
+  {
+    "sha": "abc123",
+    "filename": "src/auth/login.ts",
+    "status": "added",
+    "additions": 50,
+    "deletions": 0,
+    "changes": 50,
+    "patch": "@@ -0,0 +1,50 @@\n+import { Request, Response } from 'express';\n+import { generateToken } from './jwt';\n+import { validateCredentials } from './validator';\n+\n+export async function login(req: Request, res: Response) {\n+  const { username, password } = req.body;\n+  \n+  if (!username || !password) {\n+    return res.status(400).json({ error: 'Missing credentials' });\n+  }\n+  \n+  const isValid = await validateCredentials(username, password);\n+  \n+  if (!isValid) {\n+    return res.status(401).json({ error: 'Invalid credentials' });\n+  }\n+  \n+  const token = generateToken({ username });\n+  return res.json({ token });\n+}"
+  },
+  {
+    "sha": "def456",
+    "filename": "src/auth/jwt.ts",
+    "status": "added",
+    "additions": 30,
+    "deletions": 0,
+    "changes": 30,
+    "patch": "@@ -0,0 +1,30 @@\n+import jwt from 'jsonwebtoken';\n+\n+const SECRET = process.env.JWT_SECRET || 'default-secret';\n+\n+export function generateToken(payload: object): string {\n+  return jwt.sign(payload, SECRET, { expiresIn: '1h' });\n+}\n+\n+export function verifyToken(token: string): object | null {\n+  try {\n+    return jwt.verify(token, SECRET) as object;\n+  } catch {\n+    return null;\n+  }\n+}"
+  },
+  {
+    "sha": "ghi789",
+    "filename": "src/middleware/auth.ts",
+    "status": "added",
+    "additions": 25,
+    "deletions": 0,
+    "changes": 25,
+    "patch": "@@ -0,0 +1,25 @@\n+import { Request, Response, NextFunction } from 'express';\n+import { verifyToken } from '../auth/jwt';\n+\n+export function authMiddleware(req: Request, res: Response, next: NextFunction) {\n+  const authHeader = req.headers.authorization;\n+  \n+  if (!authHeader) {\n+    return res.status(401).json({ error: 'No token provided' });\n+  }\n+  \n+  const token = authHeader.split(' ')[1];\n+  const decoded = verifyToken(token);\n+  \n+  if (!decoded) {\n+    return res.status(401).json({ error: 'Invalid token' });\n+  }\n+  \n+  req.user = decoded;\n+  next();\n+}"
+  },
+  {
+    "sha": "jkl012",
+    "filename": "package.json",
+    "status": "modified",
+    "additions": 2,
+    "deletions": 0,
+    "changes": 2,
+    "patch": "@@ -10,6 +10,8 @@\n   \"dependencies\": {\n+    \"jsonwebtoken\": \"^9.0.0\",\n+    \"bcrypt\": \"^5.1.0\",\n     \"express\": \"^4.18.2\""
+  }
+]
+

@@ -1,0 +1,18 @@
+{
+  "summary": "This PR adds authentication functionality with some areas for improvement.",
+  "riskLevel": "medium",
+  "riskJustification": "The JWT implementation has a hardcoded fallback secret which poses a security risk in production.",
+  "inlineComments": [
+    {
+      "file": "src/auth/jwt.ts",
+      "line": 3,
+      "comment": "Avoid using hardcoded secrets - use environment variables only."
+    }
+  ],
+  "generalComments": [
+    "Good separation of concerns",
+    "Consider adding input validation",
+    "Add unit tests for authentication flow"
+  ]
+}
+
