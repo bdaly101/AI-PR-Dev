@@ -54,6 +54,23 @@ export class GitHubClient {
     return data;
   }
 
+  async getPullRequestFilesPaginated(
+    owner: string,
+    repo: string,
+    pullNumber: number,
+    page: number = 1,
+    perPage: number = 100
+  ) {
+    const { data } = await this.octokit.pulls.listFiles({
+      owner,
+      repo,
+      pull_number: pullNumber,
+      page,
+      per_page: perPage,
+    });
+    return data;
+  }
+
   async getFileContent(owner: string, repo: string, path: string, ref: string) {
     try {
       const { data } = await this.octokit.repos.getContent({
