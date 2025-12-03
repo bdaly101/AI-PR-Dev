@@ -5,7 +5,6 @@ import {
   COMMANDS, 
   generateHelpText,
   isDevAgentCommand,
-  CommandName,
 } from './parser';
 import { checkPermission, formatPermissionDenied } from './permissions';
 import { reviewService } from '../services/reviewService';
@@ -198,7 +197,7 @@ async function executeCommand(
       return handleConfigCommand(ctx, client, config);
 
     case COMMANDS.REVIEW:
-      return handleReviewCommand(ctx, parsed);
+      return handleReviewCommand(ctx);
 
     case COMMANDS.FIX_LINTS:
       return handleFixLintsCommand(ctx, parsed, client);
@@ -248,10 +247,7 @@ async function handleConfigCommand(
 /**
  * Handle /ai-review command
  */
-async function handleReviewCommand(
-  ctx: CommandContext,
-  parsed: ParsedCommand
-): Promise<CommandResult> {
+async function handleReviewCommand(ctx: CommandContext): Promise<CommandResult> {
   // Post acknowledgment
   const client = new GitHubClient(ctx.installationId);
   await client.createIssueComment(
@@ -320,7 +316,6 @@ async function handleAddTypesCommand(
   parsed: ParsedCommand,
   client: GitHubClient
 ): Promise<CommandResult> {
-  const isDryRun = parsed.args.dryRun ?? false;
   const scope = parsed.args.scope;
 
   await client.createIssueComment(
@@ -342,7 +337,6 @@ async function handleImproveDocsCommand(
   parsed: ParsedCommand,
   client: GitHubClient
 ): Promise<CommandResult> {
-  const isDryRun = parsed.args.dryRun ?? false;
   const scope = parsed.args.scope;
 
   await client.createIssueComment(
