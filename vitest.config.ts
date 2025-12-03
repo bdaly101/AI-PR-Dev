@@ -15,13 +15,15 @@ export default defineConfig({
         'dist/',
         'vitest.config.ts',
         '**/*.d.ts',
-        // M7/M8/M9 files - will be tested in future milestones
+        // M7/M8/M9/M10 files - will be tested in future milestones
         'src/linting/**',
         'src/ai/changePlan.ts',
         'src/ai/changePlanner.ts',
         'src/ai/impactAnalysis.ts',
+        'src/ai/explainer.ts',
         'src/services/changePlanService.ts',
         'src/services/gitOperations.ts',
+        'src/services/conversationService.ts',
         'src/database/repositories/changePlanRepo.ts',
         'src/utils/diff.ts',
         'src/utils/commitMessage.ts',

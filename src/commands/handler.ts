@@ -9,6 +9,7 @@ import {
 import { checkPermission, formatPermissionDenied } from './permissions';
 import { reviewService } from '../services/reviewService';
 import { changePlanService } from '../services/changePlanService';
+import { conversationService } from '../services/conversationService';
 import { loadRepoConfig } from '../config/repoConfig';
 import { logger, logPRReview } from '../utils/logging';
 import { auditRepo } from '../database/repositories/auditRepo';
@@ -199,6 +200,9 @@ async function executeCommand(
     case COMMANDS.REVIEW:
       return handleReviewCommand(ctx);
 
+    case COMMANDS.EXPLAIN:
+      return handleExplainCommand(ctx, parsed);
+
     case COMMANDS.FIX_LINTS:
       return handleFixLintsCommand(ctx, parsed, client);
 
@@ -272,6 +276,36 @@ async function handleReviewCommand(ctx: CommandContext): Promise<CommandResult> 
   );
 
   return { success: true };
+}
+
+/**
+ * Handle /ai-explain command
+ */
+async function handleExplainCommand(
+  ctx: CommandContext,
+  parsed: ParsedCommand
+): Promise<CommandResult> {
+  // Extract code from the comment if provided in a code block
+  const codeBlockMatch = ctx.commentBody.match(/```[\s\S]*?\n([\s\S]*?)```/);
+  const code = codeBlockMatch ? codeBlockMatch[1].trim() : undefined;
+
+  // The raw args after /ai-explain is the question
+  const question = parsed.rawArgs.trim() || undefined;
+
+  const result = await conversationService.handleExplainCommand(
+    ctx.owner,
+    ctx.repo,
+    ctx.pullNumber,
+    ctx.installationId,
+    ctx.username,
+    ctx.commentId,
+    {
+      code,
+      question,
+    }
+  );
+
+  return { success: result.success, message: result.message };
 }
 
 /**
