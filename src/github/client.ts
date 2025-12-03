@@ -20,17 +20,17 @@ export class GitHubClient {
         installationId,
       },
       throttle: {
-        onRateLimit: (retryAfter: number, options: { method: string; url: string }) => {
+        onRateLimit: (retryAfter: number, options: { method: string; url: string }, octokit: Octokit, retryCount: number) => {
           console.warn(
-            `Rate limit hit for ${options.method} ${options.url}. Retrying after ${retryAfter} seconds.`
+            `Rate limit hit for ${options.method} ${options.url}. Retry ${retryCount + 1} after ${retryAfter} seconds.`
           );
-          return true; // retry
+          return retryCount < 3; // retry up to 3 times
         },
-        onAbuseLimit: (retryAfter: number, options: { method: string; url: string }) => {
+        onSecondaryRateLimit: (retryAfter: number, options: { method: string; url: string }, octokit: Octokit, retryCount: number) => {
           console.warn(
-            `Abuse limit hit for ${options.method} ${options.url}. Retrying after ${retryAfter} seconds.`
+            `Secondary rate limit hit for ${options.method} ${options.url}. Retry ${retryCount + 1} after ${retryAfter} seconds.`
           );
-          return true; // retry
+          return retryCount < 3; // retry up to 3 times
         },
       },
     });
