@@ -8,6 +8,7 @@ import { DEFAULT_IGNORE_PATTERNS } from '../config/constants';
 import { ReviewResponse } from '../validation/schemas';
 import { checksService } from './checksService';
 import { loadRepoConfig, DEFAULT_CONFIG } from '../config/repoConfig';
+import { notificationService } from './notificationService';
 
 class ReviewService {
   async reviewPullRequest(
@@ -195,15 +196,33 @@ class ReviewService {
       }, 'Review posted successfully');
 
       // Record the review
+      const reviewedAt = new Date().toISOString();
       reviewRepo.recordReview({
         owner,
         repo,
         pull_number: pullNumber,
         commit_sha: context.commitSha,
-        reviewed_at: new Date().toISOString(),
+        reviewed_at: reviewedAt,
         model_used: reviewResult.model,
         review_summary: review.summary,
       });
+
+      // Notify subscribers of review completion
+      try {
+        await notificationService.notifyReviewCompletion({
+          owner,
+          repo,
+          pullNumber,
+          commitSha: context.commitSha,
+          reviewedAt,
+          severity: review.severity,
+          riskCount: review.risks.length,
+          suggestionCount: review.suggestions.length,
+        });
+      } catch (notifError) {
+        // Don't fail the review if notification fails
+        prLogger.warn({ error: notifError }, 'Failed to send notification');
+      }
 
       // Audit log
       auditRepo.log({
