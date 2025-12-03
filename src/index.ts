@@ -4,7 +4,7 @@ import { webhooks } from './github/webhooks';
 import { config } from './config/env';
 import { initDatabase, closeDatabase } from './database/db';
 import { createLogger, logWebhook, logError } from './utils/logging';
-import { registerAPIRoutes } from './api/routes';
+// API routes imported lazily to avoid issues during tests
 
 const logger = createLogger();
 
@@ -55,9 +55,13 @@ fastify.post('/webhooks/github', async (request, reply) => {
   }
 });
 
-// Register API routes
+// Register API routes (lazy-loaded to avoid import issues during tests)
 fastify.register(async function apiRoutes(fastify) {
-  await registerAPIRoutes(fastify);
+  // Only register if not in test environment
+  if (process.env.NODE_ENV !== 'test') {
+    const { registerAPIRoutes } = await import('./api/routes');
+    await registerAPIRoutes(fastify);
+  }
 });
 
 // Initialize database

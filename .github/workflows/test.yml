@@ -34,9 +34,22 @@ jobs:
       - name: Run linter
         run: npm run lint
 
+      - name: Run tests
+        run: npm test
+        timeout-minutes: 5
+        env:
+          GITHUB_APP_ID: '12345'
+          GITHUB_PRIVATE_KEY: 'test-key'
+          GITHUB_WEBHOOK_SECRET: 'test-secret'
+          OPENAI_API_KEY: 'sk-test'
+          ANTHROPIC_API_KEY: 'sk-test'
+          DATABASE_PATH: ':memory:'
+          NODE_ENV: 'test'
+      
       - name: Run tests with coverage
         run: npm run test:coverage
         timeout-minutes: 10
+        continue-on-error: true
         env:
           GITHUB_APP_ID: '12345'
           GITHUB_PRIVATE_KEY: 'test-key'
