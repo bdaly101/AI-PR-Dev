@@ -9,6 +9,7 @@ import {
   StoredChangePlan,
   formatChangePlanComment,
 } from '../ai/changePlan';
+import { gitOperations } from './gitOperations';
 
 /**
  * Service for managing change plans (dry-run and execution)
@@ -282,24 +283,24 @@ class ChangePlanService {
   }
 
   /**
-   * Handle approval of a change plan (via reaction)
+   * Handle approval of a change plan (via command or reaction)
    */
   async handlePlanApproval(
     planId: string,
     approvedBy: string,
     installationId: number
   ): Promise<{ success: boolean; prNumber?: number; message: string }> {
-    const plan = changePlanRepo.getById(planId);
+    const storedPlan = changePlanRepo.getById(planId);
 
-    if (!plan) {
+    if (!storedPlan) {
       return { success: false, message: 'Change plan not found' };
     }
 
-    if (plan.status !== 'pending') {
-      return { success: false, message: `Plan is already ${plan.status}` };
+    if (storedPlan.status !== 'pending') {
+      return { success: false, message: `Plan is already ${storedPlan.status}` };
     }
 
-    const prLogger = logPRReview(logger, plan.owner, plan.repo, plan.pullNumber, {
+    const prLogger = logPRReview(logger, storedPlan.owner, storedPlan.repo, storedPlan.pullNumber, {
       action: 'execute_change_plan',
       planId,
       approvedBy,
@@ -315,61 +316,66 @@ class ChangePlanService {
       const client = new GitHubClient(installationId);
 
       // Get default branch info
-      const defaultBranch = await client.getDefaultBranch(plan.owner, plan.repo);
-      const baseSha = await client.getBranchSha(plan.owner, plan.repo, defaultBranch);
+      const defaultBranch = await client.getDefaultBranch(storedPlan.owner, storedPlan.repo);
 
-      // Create a new branch for the fixes
-      const timestamp = Date.now();
-      const branchName = `ai-fix-lints-${plan.pullNumber}-${timestamp}`;
-      await client.createBranch(plan.owner, plan.repo, branchName, baseSha);
+      // Use the new gitOperations service for validation, PR creation, and rollback
+      prLogger.info('Executing change plan with validation');
+      
+      const result = await gitOperations.createPRFromPlan({
+        owner: storedPlan.owner,
+        repo: storedPlan.repo,
+        plan: storedPlan.plan,
+        baseBranch: defaultBranch,
+        triggeredBy: approvedBy,
+        originalPR: storedPlan.pullNumber,
+        installationId,
+        skipValidation: false, // Always validate
+      });
 
-      prLogger.info({ branchName }, 'Created branch for fixes');
+      if (!result.success) {
+        // Update plan status to failed
+        changePlanRepo.updateStatus(planId, 'failed', {
+          error: result.error,
+        });
 
-      // Apply changes from the plan
-      for (const fileChange of plan.plan.files) {
-        if (fileChange.action === 'modify' && fileChange.proposedContent) {
-          try {
-            await client.createOrUpdateFile(
-              plan.owner,
-              plan.repo,
-              fileChange.filePath,
-              fileChange.proposedContent,
-              `fix: ${fileChange.description}`,
-              branchName
-            );
-            prLogger.debug({ file: fileChange.filePath }, 'Applied fix to file');
-          } catch (fileError) {
-            prLogger.error({ file: fileChange.filePath, error: fileError }, 'Failed to update file');
-          }
+        prLogger.warn({
+          error: result.error,
+          rollbackPerformed: result.rollbackPerformed,
+        }, 'Change plan execution failed');
+
+        // Post failure comment if not already posted by validation
+        if (!result.error?.includes('Syntax validation failed')) {
+          await client.createIssueComment(
+            storedPlan.owner,
+            storedPlan.repo,
+            storedPlan.pullNumber,
+            `❌ **Change plan execution failed**\n\n` +
+            `**Error:** ${result.error}\n\n` +
+            `${result.rollbackPerformed ? '✅ Rollback was performed successfully.' : '⚠️ Manual cleanup may be required.'}\n\n` +
+            `*Please review the error and try again.*`
+          );
         }
+
+        return {
+          success: false,
+          message: result.error || 'Unknown error',
+        };
       }
 
-      // Generate PR description
-      const prBody = this.generatePRDescription(plan);
-
-      // Create the PR
-      const newPr = await client.createPullRequest(
-        plan.owner,
-        plan.repo,
-        `🤖 AI: ${plan.plan.title}`,
-        branchName,
-        defaultBranch,
-        prBody
-      );
-
-      // Update plan status
+      // Update plan status to completed
       changePlanRepo.updateStatus(planId, 'completed', {
-        resultPrNumber: newPr.number,
+        resultPrNumber: result.prNumber,
       });
 
       // Post success comment on original PR
       await client.createIssueComment(
-        plan.owner,
-        plan.repo,
-        plan.pullNumber,
+        storedPlan.owner,
+        storedPlan.repo,
+        storedPlan.pullNumber,
         `✅ **Change plan executed successfully!**\n\n` +
-        `PR #${newPr.number} has been created with the proposed fixes.\n\n` +
-        `👉 [Review the changes](${newPr.html_url})\n\n` +
+        `PR #${result.prNumber} has been created with the proposed fixes.\n\n` +
+        `👉 [Review the changes](${result.prUrl})\n\n` +
+        `**Files committed:** ${result.filesCommitted?.length || 0}\n\n` +
         `*This PR requires manual review and approval before merging.*`
       );
 
@@ -378,20 +384,20 @@ class ChangePlanService {
         timestamp: new Date().toISOString(),
         action: 'change_plan_executed',
         triggered_by: approvedBy,
-        owner: plan.owner,
-        repo: plan.repo,
-        pull_number: plan.pullNumber,
-        pr_number: newPr.number,
-        files_changed: plan.plan.files.map(f => f.filePath).join(','),
+        owner: storedPlan.owner,
+        repo: storedPlan.repo,
+        pull_number: storedPlan.pullNumber,
+        pr_number: result.prNumber,
+        files_changed: result.filesCommitted?.join(',') || '',
         success: 1,
       });
 
-      prLogger.info({ newPrNumber: newPr.number }, 'Change plan executed successfully');
+      prLogger.info({ newPrNumber: result.prNumber }, 'Change plan executed successfully');
 
       return {
         success: true,
-        prNumber: newPr.number,
-        message: `PR #${newPr.number} created successfully`,
+        prNumber: result.prNumber,
+        message: `PR #${result.prNumber} created successfully`,
       };
     } catch (error) {
       prLogger.error({ error }, 'Failed to execute change plan');
@@ -404,9 +410,9 @@ class ChangePlanService {
         timestamp: new Date().toISOString(),
         action: 'change_plan_execution_failed',
         triggered_by: approvedBy,
-        owner: plan.owner,
-        repo: plan.repo,
-        pull_number: plan.pullNumber,
+        owner: storedPlan.owner,
+        repo: storedPlan.repo,
+        pull_number: storedPlan.pullNumber,
         success: 0,
         error_message: error instanceof Error ? error.message : 'Unknown error',
       });
@@ -434,48 +440,6 @@ class ChangePlanService {
    */
   getPlanByCommentId(commentId: number): StoredChangePlan | null {
     return changePlanRepo.getByCommentId(commentId);
-  }
-
-  /**
-   * Generate PR description from change plan
-   */
-  private generatePRDescription(storedPlan: StoredChangePlan): string {
-    const plan = storedPlan.plan;
-
-    let body = `## 🤖 AI-Generated Lint Fixes\n\n`;
-    body += `This PR was automatically generated by AI Dev Agent to address lint issues.\n\n`;
-    body += `### Summary\n\n${plan.summary}\n\n`;
-    body += `### Rationale\n\n${plan.rationale}\n\n`;
-
-    body += `### Files Changed\n\n`;
-    for (const file of plan.files) {
-      body += `- \`${file.filePath}\`: ${file.description}\n`;
-    }
-    body += '\n';
-
-    body += `### Risk Assessment\n\n`;
-    body += `**Overall Risk:** ${plan.riskAssessment.overall.toUpperCase()}\n\n`;
-    if (plan.riskAssessment.factors.length > 0) {
-      body += `**Factors:**\n`;
-      plan.riskAssessment.factors.forEach(f => { body += `- ${f}\n`; });
-      body += '\n';
-    }
-
-    if (plan.testingRecommendations.length > 0) {
-      body += `### Testing Recommendations\n\n`;
-      plan.testingRecommendations.forEach(t => { body += `- ${t}\n`; });
-      body += '\n';
-    }
-
-    body += `### Rollback\n\n${plan.rollbackPlan}\n\n`;
-
-    body += `---\n`;
-    body += `**Triggered by:** @${storedPlan.triggeredBy}\n`;
-    body += `**Original PR:** #${storedPlan.pullNumber}\n`;
-    body += `**Plan ID:** \`${plan.id}\`\n\n`;
-    body += `*This PR was generated by AI and requires human review before merging.*`;
-
-    return body;
   }
 }
 

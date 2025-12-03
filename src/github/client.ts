@@ -156,6 +156,14 @@ export class GitHubClient {
     });
   }
 
+  async deleteBranch(owner: string, repo: string, branchName: string) {
+    await this.octokit.git.deleteRef({
+      owner,
+      repo,
+      ref: `heads/${branchName}`,
+    });
+  }
+
   async createOrUpdateFile(
     owner: string,
     repo: string,
