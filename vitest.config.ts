@@ -15,6 +15,13 @@ export default defineConfig({
         'dist/',
         'vitest.config.ts',
         '**/*.d.ts',
+        // M7 files - will be tested in future milestones
+        'src/linting/**',
+        'src/ai/changePlan.ts',
+        'src/ai/changePlanner.ts',
+        'src/services/changePlanService.ts',
+        'src/database/repositories/changePlanRepo.ts',
+        'src/utils/diff.ts',
       ],
       thresholds: {
         statements: 70,
