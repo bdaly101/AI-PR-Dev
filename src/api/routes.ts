@@ -1,7 +1,6 @@
-import { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
+import { FastifyInstance } from 'fastify';
 import { GitHubClient } from '../github/client';
 import { reviewRepo } from '../database/repositories/reviewRepo';
-import { checksService } from '../services/checksService';
 import { logger } from '../utils/logging';
 import {
   ReviewStatusResponse,
@@ -12,7 +11,6 @@ import {
   CreateIssueResponse,
   ErrorResponse,
 } from './types';
-import { loadRepoConfig } from '../config/repoConfig';
 import { fetchPRContext } from '../github/prHelpers';
 import { DEFAULT_IGNORE_PATTERNS } from '../config/constants';
 import { prContextRepo } from '../database/repositories/prContextRepo';

@@ -1,5 +1,3 @@
-import { ReviewResponse } from '../validation/schemas';
-
 /**
  * API response types
  */

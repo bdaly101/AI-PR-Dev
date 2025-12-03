@@ -1,12 +1,12 @@
 import { GitHubClient } from '../github/client';
 import { reviewRepo } from '../database/repositories/reviewRepo';
 import { prContextRepo } from '../database/repositories/prContextRepo';
-import { checksService, AI_REVIEW_CHECK_NAME } from './checksService';
+import { AI_REVIEW_CHECK_NAME } from './checksService';
 import { loadRepoConfig } from '../config/repoConfig';
 import { fetchPRContext } from '../github/prHelpers';
 import { DEFAULT_IGNORE_PATTERNS } from '../config/constants';
 import { logger } from '../utils/logging';
-import { RecommendationResponse, MergeRecommendation } from '../api/types';
+import { MergeRecommendation, RecommendationResponse } from '../api/types';
 
 class RecommendationService {
   /**

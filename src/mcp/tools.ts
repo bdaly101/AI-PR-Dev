@@ -5,7 +5,6 @@ import { prContextRepo } from '../database/repositories/prContextRepo';
 import { GitHubClient } from '../github/client';
 import { fetchPRContext } from '../github/prHelpers';
 import { DEFAULT_IGNORE_PATTERNS } from '../config/constants';
-import { checksService, AI_REVIEW_CHECK_NAME } from '../services/checksService';
 import { issueService } from '../services/issueService';
 
 /**
