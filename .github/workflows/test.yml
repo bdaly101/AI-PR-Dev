@@ -42,9 +42,9 @@ jobs:
           GITHUB_PRIVATE_KEY: 'test-key'
           GITHUB_WEBHOOK_SECRET: 'test-secret'
           OPENAI_API_KEY: 'sk-test'
+          ANTHROPIC_API_KEY: 'sk-test'
           DATABASE_PATH: ':memory:'
           NODE_ENV: 'test'
-          ANTHROPIC_API_KEY: 'sk-test'
 
       - name: Upload coverage reports
         uses: codecov/codecov-action@v3
