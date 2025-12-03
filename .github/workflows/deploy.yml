@@ -20,7 +20,7 @@ jobs:
     runs-on: ubuntu-latest
     environment:
       name: ${{ github.ref == 'refs/heads/main' && 'production' || 'staging' }}
-      url: ${{ github.ref == 'refs/heads/main' && 'https://ai-pr-reviewer.fly.dev' || 'https://ai-pr-reviewer-staging.fly.dev' }}
+      url: ${{ github.ref == 'refs/heads/main' && 'https://ai-dev-pr-reviewer.fly.dev' || 'https://ai-dev-pr-reviewer-staging.fly.dev' }}
     
     steps:
       - name: Checkout repository
@@ -33,10 +33,10 @@ jobs:
         id: target
         run: |
           if [ "${{ github.ref }}" == "refs/heads/main" ] || [ "${{ github.event.inputs.environment }}" == "production" ]; then
-            echo "app=ai-pr-reviewer" >> $GITHUB_OUTPUT
+            echo "app=ai-dev-pr-reviewer" >> $GITHUB_OUTPUT
             echo "environment=production" >> $GITHUB_OUTPUT
           else
-            echo "app=ai-pr-reviewer-staging" >> $GITHUB_OUTPUT
+            echo "app=ai-dev-pr-reviewer-staging" >> $GITHUB_OUTPUT
             echo "environment=staging" >> $GITHUB_OUTPUT
           fi
 
