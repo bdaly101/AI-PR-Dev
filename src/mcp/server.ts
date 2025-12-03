@@ -76,7 +76,8 @@ export async function startMCPServer(): Promise<void> {
 }
 
 // If running as a standalone script
-if (require.main === module) {
+// Only run if not in test environment
+if (require.main === module && process.env.NODE_ENV !== 'test') {
   startMCPServer().catch((error) => {
     console.error('Failed to start MCP server:', error);
     process.exit(1);
