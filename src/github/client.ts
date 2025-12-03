@@ -147,6 +147,23 @@ export class GitHubClient {
     return data;
   }
 
+  async createIssue(
+    owner: string,
+    repo: string,
+    title: string,
+    body: string,
+    labels?: string[]
+  ) {
+    const { data } = await this.octokit.issues.create({
+      owner,
+      repo,
+      title,
+      body,
+      labels: labels && labels.length > 0 ? labels : undefined,
+    });
+    return data;
+  }
+
   async createBranch(owner: string, repo: string, branchName: string, sha: string) {
     await this.octokit.git.createRef({
       owner,

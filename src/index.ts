@@ -4,6 +4,7 @@ import { webhooks } from './github/webhooks';
 import { config } from './config/env';
 import { initDatabase, closeDatabase } from './database/db';
 import { createLogger, logWebhook, logError } from './utils/logging';
+import { registerAPIRoutes } from './api/routes';
 
 const logger = createLogger();
 
@@ -52,6 +53,11 @@ fastify.post('/webhooks/github', async (request, reply) => {
     logError(webhookLogger, error, { event, id });
     reply.code(500).send({ error: 'Internal server error' });
   }
+});
+
+// Register API routes
+fastify.register(async function apiRoutes(fastify) {
+  await registerAPIRoutes(fastify);
 });
 
 // Initialize database
