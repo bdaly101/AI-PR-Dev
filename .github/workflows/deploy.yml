@@ -1,0 +1,56 @@
+name: Deploy
+
+on:
+  push:
+    branches:
+      - main
+      - staging
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Deployment environment'
+        required: true
+        type: choice
+        options:
+          - staging
+          - production
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment:
+      name: ${{ github.ref == 'refs/heads/main' && 'production' || 'staging' }}
+      url: ${{ github.ref == 'refs/heads/main' && 'https://ai-pr-reviewer.fly.dev' || 'https://ai-pr-reviewer-staging.fly.dev' }}
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Fly.io CLI
+        uses: superfly/flyctl-actions/setup-flyctl@master
+
+      - name: Determine deployment target
+        id: target
+        run: |
+          if [ "${{ github.ref }}" == "refs/heads/main" ] || [ "${{ github.event.inputs.environment }}" == "production" ]; then
+            echo "app=ai-pr-reviewer" >> $GITHUB_OUTPUT
+            echo "environment=production" >> $GITHUB_OUTPUT
+          else
+            echo "app=ai-pr-reviewer-staging" >> $GITHUB_OUTPUT
+            echo "environment=staging" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Deploy to Fly.io
+        env:
+          FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
+        run: |
+          flyctl deploy --app ${{ steps.target.outputs.app }} --remote-only
+
+      - name: Verify deployment
+        env:
+          FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
+        run: |
+          APP_NAME="${{ steps.target.outputs.app }}"
+          echo "Deployed to: https://${APP_NAME}.fly.dev"
+          echo "Health check: https://${APP_NAME}.fly.dev/health"
+
