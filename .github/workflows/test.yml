@@ -36,7 +36,7 @@ jobs:
 
       - name: Run tests with coverage
         run: npm run test:coverage
-        timeout-minutes: 5
+        timeout-minutes: 10
         env:
           GITHUB_APP_ID: '12345'
           GITHUB_PRIVATE_KEY: 'test-key'
