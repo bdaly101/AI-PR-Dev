@@ -99,6 +99,33 @@ export function initDatabase(): Database.Database {
 
     CREATE INDEX IF NOT EXISTS idx_metrics_repo 
       ON metrics(owner, repo);
+
+    CREATE TABLE IF NOT EXISTS change_plans (
+      id TEXT PRIMARY KEY,
+      owner TEXT NOT NULL,
+      repo TEXT NOT NULL,
+      pull_number INTEGER NOT NULL,
+      comment_id INTEGER NOT NULL,
+      triggered_by TEXT NOT NULL,
+      command TEXT NOT NULL,
+      status TEXT NOT NULL DEFAULT 'pending',
+      plan_json TEXT NOT NULL,
+      created_at TEXT NOT NULL,
+      updated_at TEXT NOT NULL,
+      approved_by TEXT,
+      approved_at TEXT,
+      result_pr_number INTEGER,
+      error TEXT
+    );
+
+    CREATE INDEX IF NOT EXISTS idx_change_plans_repo 
+      ON change_plans(owner, repo, pull_number);
+    
+    CREATE INDEX IF NOT EXISTS idx_change_plans_status 
+      ON change_plans(status);
+    
+    CREATE INDEX IF NOT EXISTS idx_change_plans_comment 
+      ON change_plans(comment_id);
   `);
 
   return db;

@@ -8,7 +8,7 @@ import {
 } from './parser';
 import { checkPermission, formatPermissionDenied } from './permissions';
 import { reviewService } from '../services/reviewService';
-import { devAgentService } from '../services/devAgentService';
+import { changePlanService } from '../services/changePlanService';
 import { loadRepoConfig } from '../config/repoConfig';
 import { logger, logPRReview } from '../utils/logging';
 import { auditRepo } from '../database/repositories/auditRepo';
@@ -208,6 +208,12 @@ async function executeCommand(
     case COMMANDS.IMPROVE_DOCS:
       return handleImproveDocsCommand(ctx, parsed, client);
 
+    case COMMANDS.APPROVE:
+      return handleApproveCommand(ctx, parsed, client);
+
+    case COMMANDS.REJECT:
+      return handleRejectCommand(ctx, parsed, client);
+
     default:
       return { success: false, message: 'Unknown command' };
   }
@@ -277,35 +283,56 @@ async function handleFixLintsCommand(
   client: GitHubClient
 ): Promise<CommandResult> {
   const isDryRun = parsed.args.dryRun ?? false;
-  const scope = parsed.args.scope;
+  const scope = parsed.args.scope as string | undefined;
 
   if (isDryRun) {
+    // Dry-run mode: just show lint issues without proposing changes
     await client.createIssueComment(
       ctx.owner,
       ctx.repo,
       ctx.pullNumber,
       `🔍 **Dry Run Mode**\n\nAnalyzing lint issues${scope ? ` in \`${scope}\`` : ''}...\n\n*This is a preview only. No changes will be made.*`
     );
-    // TODO: Implement dry-run analysis in M7
-    return { success: true, message: 'Dry run completed' };
+
+    const result = await changePlanService.generateDryRunPreview(
+      ctx.owner,
+      ctx.repo,
+      ctx.pullNumber,
+      ctx.installationId,
+      ctx.username,
+      scope
+    );
+
+    return { success: result.success, message: result.message };
   }
 
-  // Full execution
+  // Full execution: generate change plan and wait for approval
   await client.createIssueComment(
     ctx.owner,
     ctx.repo,
     ctx.pullNumber,
-    `🤖 AI Dev Agent is analyzing lint issues${scope ? ` in \`${scope}\`` : ''}...\n\n*A new PR will be created with the fixes.*`
+    `🤖 AI Dev Agent is analyzing lint issues${scope ? ` in \`${scope}\`` : ''}...\n\n*A change plan will be generated. React with 👍 to approve and create a PR.*`
   );
 
-  await devAgentService.handleFixLints(
+  const result = await changePlanService.generateLintFixPlan(
     ctx.owner,
     ctx.repo,
     ctx.pullNumber,
-    ctx.installationId
+    ctx.installationId,
+    ctx.username,
+    scope
   );
 
-  return { success: true };
+  if (!result.success) {
+    await client.createIssueComment(
+      ctx.owner,
+      ctx.repo,
+      ctx.pullNumber,
+      `⚠️ ${result.message}`
+    );
+  }
+
+  return { success: result.success, message: result.message };
 }
 
 /**
@@ -348,6 +375,83 @@ async function handleImproveDocsCommand(
 
   // TODO: Implement in M7/M8
   return { success: true, message: 'Feature not yet implemented' };
+}
+
+/**
+ * Handle /ai-approve command
+ */
+async function handleApproveCommand(
+  ctx: CommandContext,
+  parsed: ParsedCommand,
+  client: GitHubClient
+): Promise<CommandResult> {
+  const planId = parsed.args.planId;
+
+  if (!planId) {
+    await client.createIssueComment(
+      ctx.owner,
+      ctx.repo,
+      ctx.pullNumber,
+      `⚠️ Missing plan ID. Usage: \`/ai-approve <plan-id>\``
+    );
+    return { success: false, message: 'Missing plan ID' };
+  }
+
+  await client.createIssueComment(
+    ctx.owner,
+    ctx.repo,
+    ctx.pullNumber,
+    `✅ Approving change plan \`${planId}\`...\n\n*Creating PR with proposed changes.*`
+  );
+
+  const result = await changePlanService.handlePlanApproval(
+    planId,
+    ctx.username,
+    ctx.installationId
+  );
+
+  if (!result.success) {
+    await client.createIssueComment(
+      ctx.owner,
+      ctx.repo,
+      ctx.pullNumber,
+      `❌ Failed to execute plan: ${result.message}`
+    );
+  }
+
+  return { success: result.success, prNumber: result.prNumber, message: result.message };
+}
+
+/**
+ * Handle /ai-reject command
+ */
+async function handleRejectCommand(
+  ctx: CommandContext,
+  parsed: ParsedCommand,
+  client: GitHubClient
+): Promise<CommandResult> {
+  const planId = parsed.args.planId;
+
+  if (!planId) {
+    await client.createIssueComment(
+      ctx.owner,
+      ctx.repo,
+      ctx.pullNumber,
+      `⚠️ Missing plan ID. Usage: \`/ai-reject <plan-id>\``
+    );
+    return { success: false, message: 'Missing plan ID' };
+  }
+
+  await changePlanService.handlePlanRejection(planId, ctx.username);
+
+  await client.createIssueComment(
+    ctx.owner,
+    ctx.repo,
+    ctx.pullNumber,
+    `🚫 Change plan \`${planId}\` has been rejected.\n\n*No changes will be made.*`
+  );
+
+  return { success: true, message: 'Plan rejected' };
 }
 
 /**
