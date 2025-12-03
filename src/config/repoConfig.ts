@@ -63,6 +63,17 @@ export const DevAgentConfigSchema = z.object({
 export type DevAgentConfig = z.infer<typeof DevAgentConfigSchema>;
 
 /**
+ * CI Integration configuration
+ */
+export const CIConfigSchema = z.object({
+  enabled: z.boolean().default(true),
+  postCheckRun: z.boolean().default(true),
+  blockOnCritical: z.boolean().default(false),
+  requiredForMerge: z.boolean().default(false),
+});
+export type CIConfig = z.infer<typeof CIConfigSchema>;
+
+/**
  * Complete repository configuration schema
  */
 export const RepoConfigSchema = z.object({
@@ -72,6 +83,7 @@ export const RepoConfigSchema = z.object({
   reviewer: ReviewerConfigSchema.default({}),
   ai: AIConfigSchema.default({}),
   devAgent: DevAgentConfigSchema.default({}),
+  ci: CIConfigSchema.default({}),
 });
 export type RepoConfig = z.infer<typeof RepoConfigSchema>;
 
@@ -100,6 +112,12 @@ export const DEFAULT_CONFIG: RepoConfig = {
     maxFilesPerPR: 10,
     maxLinesChanged: 200,
     requireApproval: true,
+  },
+  ci: {
+    enabled: true,
+    postCheckRun: true,
+    blockOnCritical: false,
+    requiredForMerge: false,
   },
 };
 
@@ -159,6 +177,10 @@ function mergeWithDefaults(config: Partial<RepoConfig>): RepoConfig {
     devAgent: {
       ...DEFAULT_CONFIG.devAgent,
       ...config.devAgent,
+    },
+    ci: {
+      ...DEFAULT_CONFIG.ci,
+      ...config.ci,
     },
   };
 }

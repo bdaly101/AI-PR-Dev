@@ -6,6 +6,8 @@ import { auditRepo } from '../database/repositories/auditRepo';
 import { logger, logPRReview, logError } from '../utils/logging';
 import { DEFAULT_IGNORE_PATTERNS } from '../config/constants';
 import { ReviewResponse } from '../validation/schemas';
+import { checksService } from './checksService';
+import { loadRepoConfig, DEFAULT_CONFIG } from '../config/repoConfig';
 
 class ReviewService {
   async reviewPullRequest(
@@ -16,10 +18,16 @@ class ReviewService {
   ) {
     const prLogger = logPRReview(logger, owner, repo, pullNumber);
     const startTime = Date.now();
+    let checkRunId: number | null = null;
+    let client: GitHubClient | null = null;
+    let repoConfig = DEFAULT_CONFIG;
     
     try {
-      const client = new GitHubClient(installationId);
+      client = new GitHubClient(installationId);
 
+      // Load repository configuration
+      repoConfig = await loadRepoConfig(client, owner, repo);
+      
       // Fetch complete PR context with caching and truncation
       prLogger.info('Fetching PR context');
       const context = await fetchPRContext(client, owner, repo, pullNumber, {
@@ -27,9 +35,35 @@ class ReviewService {
         ignorePatterns: DEFAULT_IGNORE_PATTERNS,
       });
 
+      // Create in-progress check run if CI integration is enabled
+      if (repoConfig.ci.enabled && repoConfig.ci.postCheckRun) {
+        try {
+          checkRunId = await checksService.createInProgressCheck(
+            client,
+            owner,
+            repo,
+            context.commitSha,
+            pullNumber
+          );
+        } catch (checkError) {
+          prLogger.warn({ error: checkError }, 'Failed to create check run, continuing without it');
+        }
+      }
+
       // Check if this commit has already been reviewed
       if (reviewRepo.hasBeenReviewed(owner, repo, context.commitSha)) {
         prLogger.info({ commitSha: context.commitSha }, 'Commit already reviewed, skipping');
+        
+        // Complete check run as skipped
+        if (checkRunId && client) {
+          await checksService.completeCheckSkipped(
+            client,
+            owner,
+            repo,
+            checkRunId,
+            'This commit has already been reviewed.'
+          );
+        }
         return;
       }
 
@@ -39,6 +73,17 @@ class ReviewService {
         
         const summary = generateLargePRSummary(context);
         await client.createIssueComment(owner, repo, pullNumber, summary);
+        
+        // Complete check run as skipped
+        if (checkRunId) {
+          await checksService.completeCheckSkipped(
+            client,
+            owner,
+            repo,
+            checkRunId,
+            `PR is too large for detailed review (${context.totalFiles} files).`
+          );
+        }
         
         // Record that we handled this PR
         reviewRepo.recordReview({
@@ -63,6 +108,17 @@ class ReviewService {
           pullNumber,
           '✅ No reviewable code changes detected in this PR (files may be binary, ignored, or empty).'
         );
+        
+        // Complete check run as skipped
+        if (checkRunId) {
+          await checksService.completeCheckSkipped(
+            client,
+            owner,
+            repo,
+            checkRunId,
+            'No reviewable code changes detected in this PR.'
+          );
+        }
         return;
       }
 
@@ -103,6 +159,23 @@ class ReviewService {
         'COMMENT',
         inlineComments
       );
+
+      // Complete check run with review results
+      if (checkRunId) {
+        const checkResult = await checksService.completeCheckWithReview(
+          client,
+          owner,
+          repo,
+          checkRunId,
+          review,
+          context,
+          repoConfig.ci
+        );
+        prLogger.info({ 
+          checkConclusion: checkResult.conclusion,
+          checkRunId: checkResult.checkRunId,
+        }, 'Check run completed');
+      }
 
       // Add ai-reviewed label
       try {
@@ -149,6 +222,18 @@ class ReviewService {
     } catch (error) {
       logError(prLogger, error, { action: 'review_pull_request' });
       
+      // Complete check run with error
+      if (checkRunId && client) {
+        const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+        await checksService.completeCheckWithError(
+          client,
+          owner,
+          repo,
+          checkRunId,
+          errorMessage
+        );
+      }
+      
       // Audit log the failure
       auditRepo.log({
         timestamp: new Date().toISOString(),
@@ -181,7 +266,9 @@ class ReviewService {
       
       // Try to post an error comment
       try {
-        const client = new GitHubClient(installationId);
+        if (!client) {
+          client = new GitHubClient(installationId);
+        }
         await client.createIssueComment(owner, repo, pullNumber, userMessage);
       } catch (commentError) {
         logError(prLogger, commentError, { action: 'post_error_comment' });

@@ -308,4 +308,116 @@ export class GitHubClient {
       content: reaction,
     });
   }
+
+  // ============================================
+  // GitHub Checks API Methods
+  // ============================================
+
+  /**
+   * Create a new check run
+   */
+  async createCheckRun(
+    owner: string,
+    repo: string,
+    name: string,
+    headSha: string,
+    options?: {
+      status?: 'queued' | 'in_progress' | 'completed';
+      conclusion?: 'action_required' | 'cancelled' | 'failure' | 'neutral' | 'success' | 'skipped' | 'stale' | 'timed_out';
+      detailsUrl?: string;
+      externalId?: string;
+      output?: {
+        title: string;
+        summary: string;
+        text?: string;
+        annotations?: Array<{
+          path: string;
+          start_line: number;
+          end_line: number;
+          annotation_level: 'notice' | 'warning' | 'failure';
+          message: string;
+          title?: string;
+          raw_details?: string;
+        }>;
+      };
+    }
+  ) {
+    const { data } = await this.octokit.checks.create({
+      owner,
+      repo,
+      name,
+      head_sha: headSha,
+      status: options?.status,
+      conclusion: options?.conclusion,
+      details_url: options?.detailsUrl,
+      external_id: options?.externalId,
+      output: options?.output,
+      started_at: new Date().toISOString(),
+    });
+    return data;
+  }
+
+  /**
+   * Update an existing check run
+   */
+  async updateCheckRun(
+    owner: string,
+    repo: string,
+    checkRunId: number,
+    options: {
+      status?: 'queued' | 'in_progress' | 'completed';
+      conclusion?: 'action_required' | 'cancelled' | 'failure' | 'neutral' | 'success' | 'skipped' | 'stale' | 'timed_out';
+      detailsUrl?: string;
+      output?: {
+        title: string;
+        summary: string;
+        text?: string;
+        annotations?: Array<{
+          path: string;
+          start_line: number;
+          end_line: number;
+          annotation_level: 'notice' | 'warning' | 'failure';
+          message: string;
+          title?: string;
+          raw_details?: string;
+        }>;
+      };
+    }
+  ) {
+    const { data } = await this.octokit.checks.update({
+      owner,
+      repo,
+      check_run_id: checkRunId,
+      status: options.status,
+      conclusion: options.conclusion,
+      details_url: options.detailsUrl,
+      output: options.output,
+      completed_at: options.status === 'completed' ? new Date().toISOString() : undefined,
+    });
+    return data;
+  }
+
+  /**
+   * List check runs for a specific ref
+   */
+  async listCheckRuns(
+    owner: string,
+    repo: string,
+    ref: string,
+    options?: {
+      checkName?: string;
+      status?: 'queued' | 'in_progress' | 'completed';
+      filter?: 'latest' | 'all';
+    }
+  ) {
+    const { data } = await this.octokit.checks.listForRef({
+      owner,
+      repo,
+      ref,
+      check_name: options?.checkName,
+      status: options?.status,
+      filter: options?.filter,
+    });
+    return data;
+  }
 }
