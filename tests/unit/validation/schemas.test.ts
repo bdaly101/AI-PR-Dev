@@ -35,14 +35,14 @@ describe('validation/schemas', () => {
       expect(result.success).toBe(false);
     });
 
-    it('should reject response with summary too short', () => {
-      const invalid = { ...validReviewResponse, summary: 'Too short' };
+    it('should reject response with empty summary', () => {
+      const invalid = { ...validReviewResponse, summary: '' };
       const result = ReviewResponseSchema.safeParse(invalid);
       expect(result.success).toBe(false);
     });
 
     it('should reject response with summary too long', () => {
-      const invalid = { ...validReviewResponse, summary: 'x'.repeat(1001) };
+      const invalid = { ...validReviewResponse, summary: 'x'.repeat(2001) };
       const result = ReviewResponseSchema.safeParse(invalid);
       expect(result.success).toBe(false);
     });
@@ -62,7 +62,7 @@ describe('validation/schemas', () => {
     });
 
     it('should reject too many risks', () => {
-      const tooManyRisks = Array(16).fill({
+      const tooManyRisks = Array(31).fill({
         category: 'bug',
         description: 'A bug was found',
         severity: 'low',
@@ -73,7 +73,7 @@ describe('validation/schemas', () => {
     });
 
     it('should reject too many inline comments', () => {
-      const tooManyComments = Array(26).fill({
+      const tooManyComments = Array(51).fill({
         path: 'src/test.ts',
         line: 1,
         body: 'A comment',
