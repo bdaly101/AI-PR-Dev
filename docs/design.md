@@ -1569,6 +1569,26 @@ Generate a change plan in JSON format.
 - JetBrains plugin
 - Real-time code review as you type
 
+#### **M16: IDE Agent Integration**
+**Goal:** Enable AI IDE agents (Cursor, GitHub Copilot Chat) to interact with AI PR Reviewer in a closed-loop workflow
+
+- [ ] Build MCP (Model Context Protocol) server for Cursor integration
+- [ ] Add REST API endpoints for querying review status and suggestions
+- [ ] Implement webhook notifications for review completion events
+- [ ] Create structured suggestion format for automated task creation
+- [ ] Build CLI tool for agent-to-agent communication
+- [ ] Auto-create GitHub issues/milestones from high-priority AI suggestions
+- [ ] Support polling and push-based status updates
+- [ ] Enable agents to query CI/test status alongside review results
+- [ ] Provide recommendation engine (merge/iterate/block) based on review + CI
+
+**Use Cases:**
+- IDE agent pushes branch → waits for review → reads feedback → decides next steps
+- IDE agent creates tasks/milestones from AI reviewer suggestions automatically
+- Closed-loop development: code → push → review → fix → merge without context switching
+
+**Deliverable:** Seamless integration between AI coding assistants and AI PR Reviewer
+
 ---
 
 ### **Enterprise Features**
