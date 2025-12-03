@@ -42,14 +42,15 @@ export const InlineCommentSchema = z.object({
 /**
  * Complete AI review response schema
  * Matches the design doc specification
+ * Made lenient to handle AI response variations
  */
 export const ReviewResponseSchema = z.object({
-  summary: z.string().min(10).max(1000),
+  summary: z.string().min(1).max(2000),
   severity: OverallSeveritySchema,
-  strengths: z.array(z.string().min(1).max(300)).min(0).max(10),
-  risks: z.array(RiskSchema).min(0).max(15),
-  suggestions: z.array(z.string().min(1).max(500)).min(0).max(10),
-  inlineComments: z.array(InlineCommentSchema).min(0).max(25),
+  strengths: z.array(z.string().max(500)).max(20).default([]),
+  risks: z.array(RiskSchema).max(30).default([]),
+  suggestions: z.array(z.string().max(1000)).max(20).default([]),
+  inlineComments: z.array(InlineCommentSchema).max(50).default([]),
 });
 
 /**

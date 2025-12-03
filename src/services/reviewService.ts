@@ -161,16 +161,28 @@ class ReviewService {
         error_message: error instanceof Error ? error.message : 'Unknown error',
       });
       
+      // Categorize the error for user-friendly messaging
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      let userMessage = '❌ Failed to generate AI review.\n\n';
+      
+      if (errorMessage.includes('API key')) {
+        userMessage += '**Reason:** AI provider configuration issue.\n';
+      } else if (errorMessage.includes('rate limit') || errorMessage.includes('429')) {
+        userMessage += '**Reason:** AI provider rate limit exceeded. Please wait a few minutes and try again.\n';
+      } else if (errorMessage.includes('Invalid review response') || errorMessage.includes('JSON')) {
+        userMessage += '**Reason:** AI returned an invalid response format. This can happen with complex PRs.\n';
+      } else if (errorMessage.includes('token') || errorMessage.includes('context length')) {
+        userMessage += '**Reason:** PR is too large for the AI to process. Consider splitting into smaller PRs.\n';
+      } else {
+        userMessage += `**Error:** ${errorMessage.substring(0, 200)}\n`;
+      }
+      
+      userMessage += '\n*You can retry by commenting `/ai-review`*';
+      
       // Try to post an error comment
       try {
         const client = new GitHubClient(installationId);
-        await client.createIssueComment(
-          owner,
-          repo,
-          pullNumber,
-          '❌ Failed to generate AI review. Please check the logs for details.\n\n' +
-          '*You can retry by commenting `/ai-review`*'
-        );
+        await client.createIssueComment(owner, repo, pullNumber, userMessage);
       } catch (commentError) {
         logError(prLogger, commentError, { action: 'post_error_comment' });
       }

@@ -68,8 +68,8 @@ export const AI_DEFAULTS = {
   /** Default temperature for code generation (very low for determinism) */
   CODE_GEN_TEMPERATURE: 0.1,
   
-  /** Maximum tokens for review response */
-  MAX_REVIEW_TOKENS: 2000,
+  /** Maximum tokens for review response (increased for complex PRs) */
+  MAX_REVIEW_TOKENS: 4096,
 };
 
 // File patterns to always ignore in reviews

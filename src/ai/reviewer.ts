@@ -86,7 +86,9 @@ export class AIReviewer {
         { model, temperature }
       );
 
-      const review = parseAnyReviewResponse(JSON.parse(result.content));
+      // Extract JSON from response (handle markdown code blocks)
+      const jsonContent = this.extractJSON(result.content);
+      const review = parseAnyReviewResponse(JSON.parse(jsonContent));
       const durationMs = Date.now() - startTime;
 
       reviewerLogger.info({
@@ -126,7 +128,9 @@ export class AIReviewer {
               { temperature }
             );
 
-            const review = parseAnyReviewResponse(JSON.parse(result.content));
+            // Extract JSON from response (handle markdown code blocks)
+            const jsonContent = this.extractJSON(result.content);
+            const review = parseAnyReviewResponse(JSON.parse(jsonContent));
             const durationMs = Date.now() - startTime;
 
             reviewerLogger.info({
@@ -269,6 +273,32 @@ export class AIReviewer {
    */
   private isProviderAvailable(provider: AIProvider): boolean {
     return provider === 'openai' ? isOpenAIAvailable() : isAnthropicAvailable();
+  }
+
+  /**
+   * Extract JSON from AI response (handles markdown code blocks)
+   */
+  private extractJSON(content: string): string {
+    // If it's already valid JSON, return as-is
+    const trimmed = content.trim();
+    if (trimmed.startsWith('{') && trimmed.endsWith('}')) {
+      return trimmed;
+    }
+
+    // Try to extract from markdown code block
+    const jsonMatch = content.match(/```(?:json)?\s*([\s\S]*?)```/);
+    if (jsonMatch) {
+      return jsonMatch[1].trim();
+    }
+
+    // Try to find JSON object in the content
+    const objectMatch = content.match(/\{[\s\S]*\}/);
+    if (objectMatch) {
+      return objectMatch[0];
+    }
+
+    // Return original content and let JSON.parse handle the error
+    return content;
   }
 }
 
