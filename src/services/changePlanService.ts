@@ -326,10 +326,12 @@ class ChangePlanService {
         repo: storedPlan.repo,
         plan: storedPlan.plan,
         baseBranch: defaultBranch,
-        triggeredBy: approvedBy,
+        triggeredBy: storedPlan.triggeredBy, // Use original requester, not approver
         originalPR: storedPlan.pullNumber,
+        originalCommentId: storedPlan.commentId, // Link back to original command
         installationId,
         skipValidation: false, // Always validate
+        includeImpactAnalysis: true, // Generate AI impact analysis
       });
 
       if (!result.success) {
