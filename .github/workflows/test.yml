@@ -9,6 +9,7 @@ on:
 jobs:
   test:
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     
     strategy:
       matrix:
@@ -35,6 +36,7 @@ jobs:
 
       - name: Run tests with coverage
         run: npm run test:coverage
+        timeout-minutes: 5
         env:
           GITHUB_APP_ID: '12345'
           GITHUB_PRIVATE_KEY: 'test-key'
@@ -42,6 +44,7 @@ jobs:
           OPENAI_API_KEY: 'sk-test'
           DATABASE_PATH: ':memory:'
           NODE_ENV: 'test'
+          ANTHROPIC_API_KEY: 'sk-test'
 
       - name: Upload coverage reports
         uses: codecov/codecov-action@v3
