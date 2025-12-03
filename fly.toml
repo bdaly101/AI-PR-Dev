@@ -1,7 +1,7 @@
 # Fly.io configuration for AI PR Reviewer
 # See: https://fly.io/docs/reference/configuration/
 
-app = "ai-pr-reviewer"
+app = "ai-dev-pr-reviewer"
 primary_region = "iad"
 
 [build]
