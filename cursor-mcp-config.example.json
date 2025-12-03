@@ -1,0 +1,19 @@
+{
+  "mcpServers": {
+    "ai-pr-reviewer": {
+      "command": "node",
+      "args": [
+        "/absolute/path/to/AI-PR-Dev/dist/mcp/server.js"
+      ],
+      "env": {
+        "GITHUB_APP_ID": "your-github-app-id",
+        "GITHUB_PRIVATE_KEY": "-----BEGIN RSA PRIVATE KEY-----\\nYour key content here\\n-----END RSA PRIVATE KEY-----",
+        "OPENAI_API_KEY": "sk-your-openai-key",
+        "ANTHROPIC_API_KEY": "sk-ant-your-anthropic-key",
+        "DATABASE_PATH": "/absolute/path/to/AI-PR-Dev/data/app.db",
+        "NODE_ENV": "production"
+      }
+    }
+  }
+}
+

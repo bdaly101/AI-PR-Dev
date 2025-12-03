@@ -13,6 +13,7 @@
     "dev": "ts-node src/index.ts",
     "mcp": "ts-node src/mcp/server.ts",
     "cli": "ts-node src/cli/index.ts",
+    "setup-cursor": "node scripts/generate-cursor-config.js",
     "lint": "eslint src --ext .ts",
     "type-check": "tsc --noEmit",
     "test": "vitest run",

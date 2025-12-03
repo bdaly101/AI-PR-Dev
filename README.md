@@ -16,6 +16,13 @@ AI PR Reviewer & Dev Agent is a GitHub App that automates code reviews using GPT
 
 - 🔒 **Safety First**: Never auto-merges - all changes require human approval
 
+- 🎯 **Cursor IDE Integration**: Use the AI PR Reviewer directly in Cursor with MCP tools:
+  - Query review status and suggestions
+  - Get merge recommendations
+  - Create GitHub issues from suggestions
+  - Check CI status
+  - See [Cursor Integration Guide](docs/cursor-integration.md) for setup
+
 ## Architecture
 
 The application is built with TypeScript and follows a clean architecture:
