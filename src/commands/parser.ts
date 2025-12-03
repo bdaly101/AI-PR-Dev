@@ -5,6 +5,7 @@ import { z } from 'zod';
  */
 export const COMMANDS = {
   REVIEW: '/ai-review',
+  EXPLAIN: '/ai-explain',
   FIX_LINTS: '/ai-fix-lints',
   ADD_TYPES: '/ai-add-types',
   IMPROVE_DOCS: '/ai-improve-docs',
@@ -163,6 +164,8 @@ export function getCommandDescription(command: CommandName): string {
   switch (command) {
     case COMMANDS.REVIEW:
       return 'Trigger a new AI code review on this PR';
+    case COMMANDS.EXPLAIN:
+      return 'Get AI explanation for code (supports follow-up questions)';
     case COMMANDS.FIX_LINTS:
       return 'Generate a change plan for lint fixes';
     case COMMANDS.ADD_TYPES:
@@ -189,6 +192,8 @@ export function getCommandUsage(command: CommandName): string {
   switch (command) {
     case COMMANDS.REVIEW:
       return '/ai-review';
+    case COMMANDS.EXPLAIN:
+      return '/ai-explain [question]';
     case COMMANDS.FIX_LINTS:
       return '/ai-fix-lints [--dry-run] [--scope=path]';
     case COMMANDS.ADD_TYPES:
@@ -229,8 +234,9 @@ export function generateHelpText(): string {
   help += `\n### Examples\n\n`;
   help += `\`\`\`\n`;
   help += `/ai-review                    # Run AI code review\n`;
+  help += `/ai-explain                   # Explain code (use in review comment)\n`;
+  help += `/ai-explain What does this do? # Ask specific question\n`;
   help += `/ai-fix-lints --dry-run       # Preview lint fixes\n`;
-  help += `/ai-add-types src/utils/      # Add types to utils folder\n`;
   help += `\`\`\`\n`;
   help += `\n---\n`;
   help += `*AI PR Reviewer • [Documentation](https://github.com/bdaly101/AI-PR-Dev)*`;
@@ -256,6 +262,7 @@ export function isDevAgentCommand(command: CommandName): boolean {
 export function isReadOnlyCommand(command: CommandName): boolean {
   const readOnlyCommands: CommandName[] = [
     COMMANDS.REVIEW,
+    COMMANDS.EXPLAIN,
     COMMANDS.HELP,
     COMMANDS.CONFIG,
   ];
