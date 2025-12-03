@@ -261,4 +261,42 @@ export class GitHubClient {
     const labels = await this.getLabels(owner, repo, issueNumber);
     return labels.some(l => l.name === label);
   }
+
+  /**
+   * Get a user's permission level on a repository
+   */
+  async getCollaboratorPermission(
+    owner: string,
+    repo: string,
+    username: string
+  ): Promise<string> {
+    try {
+      const { data } = await this.octokit.repos.getCollaboratorPermissionLevel({
+        owner,
+        repo,
+        username,
+      });
+      return data.permission;
+    } catch (error) {
+      // User might not be a collaborator
+      return 'none';
+    }
+  }
+
+  /**
+   * Add a reaction to a comment
+   */
+  async addReaction(
+    owner: string,
+    repo: string,
+    commentId: number,
+    reaction: '+1' | '-1' | 'laugh' | 'confused' | 'heart' | 'hooray' | 'rocket' | 'eyes'
+  ) {
+    await this.octokit.reactions.createForIssueComment({
+      owner,
+      repo,
+      comment_id: commentId,
+      content: reaction,
+    });
+  }
 }

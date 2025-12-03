@@ -1,7 +1,8 @@
 import { Webhooks } from '@octokit/webhooks';
 import { config } from '../config/env';
 import { reviewService } from '../services/reviewService';
-import { devAgentService } from '../services/devAgentService';
+import { handleCommand } from '../commands/handler';
+import { isSlashCommand } from '../commands/parser';
 import { logger, logPRReview, logError } from '../utils/logging';
 
 export const webhooks = new Webhooks({
@@ -70,37 +71,87 @@ webhooks.on('issue_comment.created', async ({ payload }) => {
     payload.repository.owner.login,
     payload.repository.name,
     payload.issue.number,
-    { event: 'issue_comment.created', comment: comment.substring(0, 100) }
+    { 
+      event: 'issue_comment.created', 
+      comment: comment.substring(0, 100),
+      username: payload.comment.user.login,
+    }
   );
 
-  prLogger.info('Issue comment created on PR');
+  // Check if this is a slash command
+  if (!isSlashCommand(comment)) {
+    return;
+  }
+
+  prLogger.info('Slash command detected');
 
   if (!payload.installation?.id) {
     prLogger.error('No installation ID found in payload');
     return;
   }
 
-  // Handle /ai-fix-lints command
-  if (comment.startsWith('/ai-fix-lints')) {
-    prLogger.info('Processing /ai-fix-lints command');
-    await devAgentService.handleFixLints(
-      payload.repository.owner.login,
-      payload.repository.name,
-      payload.issue.number,
-      payload.installation.id
-    );
+  // Ignore comments from bots to prevent loops
+  if (payload.comment.user.type === 'Bot') {
+    prLogger.debug('Ignoring bot comment');
+    return;
   }
+
+  // Handle the command through the new command system
+  await handleCommand({
+    owner: payload.repository.owner.login,
+    repo: payload.repository.name,
+    pullNumber: payload.issue.number,
+    installationId: payload.installation.id,
+    commentId: payload.comment.id,
+    username: payload.comment.user.login,
+    commentBody: comment,
+  });
+});
+
+// Handle PR review comments (inline comments) for slash commands
+webhooks.on('pull_request_review_comment.created', async ({ payload }) => {
+  const comment = payload.comment.body.trim();
   
-  // Handle /ai-review command
-  if (comment.startsWith('/ai-review')) {
-    prLogger.info('Processing /ai-review command');
-    await reviewService.reviewPullRequest(
-      payload.repository.owner.login,
-      payload.repository.name,
-      payload.issue.number,
-      payload.installation.id
-    );
+  // Check if this is a slash command
+  if (!isSlashCommand(comment)) {
+    return;
   }
+
+  const prLogger = logPRReview(
+    logger,
+    payload.repository.owner.login,
+    payload.repository.name,
+    payload.pull_request.number,
+    { 
+      event: 'pull_request_review_comment.created',
+      comment: comment.substring(0, 100),
+      username: payload.comment.user.login,
+    }
+  );
+
+  prLogger.info('Slash command detected in review comment');
+
+  if (!payload.installation?.id) {
+    prLogger.error('No installation ID found in payload');
+    return;
+  }
+
+  // Ignore comments from bots
+  if (payload.comment.user.type === 'Bot') {
+    prLogger.debug('Ignoring bot comment');
+    return;
+  }
+
+  // Handle the command
+  await handleCommand({
+    owner: payload.repository.owner.login,
+    repo: payload.repository.name,
+    pullNumber: payload.pull_request.number,
+    installationId: payload.installation.id,
+    commentId: payload.comment.id,
+    username: payload.comment.user.login,
+    commentBody: comment,
+  });
 });
 
 webhooks.onError((error) => {
