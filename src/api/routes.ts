@@ -5,7 +5,6 @@ import { logger } from '../utils/logging';
 import {
   ReviewStatusResponse,
   SuggestionsResponse,
-  RecommendationResponse,
   CIStatusResponse,
   CreateIssueRequest,
   CreateIssueResponse,
