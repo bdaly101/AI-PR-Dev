@@ -8,6 +8,8 @@ export const COMMANDS = {
   FIX_LINTS: '/ai-fix-lints',
   ADD_TYPES: '/ai-add-types',
   IMPROVE_DOCS: '/ai-improve-docs',
+  APPROVE: '/ai-approve',
+  REJECT: '/ai-reject',
   HELP: '/ai-help',
   CONFIG: '/ai-config',
 } as const;
@@ -21,6 +23,7 @@ export const CommandArgsSchema = z.object({
   scope: z.string().optional(), // e.g., file path or directory
   dryRun: z.boolean().optional(),
   force: z.boolean().optional(),
+  planId: z.string().optional(), // for approve/reject commands
 });
 
 export type CommandArgs = z.infer<typeof CommandArgsSchema>;
@@ -75,8 +78,19 @@ export function parseCommand(commentBody: string): ParsedCommand | null {
     };
   }
 
-  // Parse arguments
-  const args = parseArgs(rawArgs);
+  // Parse arguments (pass command for context-aware parsing)
+  const args = parseArgs(rawArgs, matchedCommand);
+
+  // Validate required args for specific commands
+  if ((matchedCommand === COMMANDS.APPROVE || matchedCommand === COMMANDS.REJECT) && !args.planId) {
+    return {
+      command: matchedCommand,
+      args,
+      rawArgs,
+      isValid: false,
+      errorMessage: `Missing plan ID. Usage: \`${matchedCommand} <plan-id>\``,
+    };
+  }
 
   return {
     command: matchedCommand,
@@ -90,7 +104,7 @@ export function parseCommand(commentBody: string): ParsedCommand | null {
  * Parse command arguments
  * Supports: --flag, --key=value, positional args
  */
-function parseArgs(rawArgs: string): CommandArgs {
+function parseArgs(rawArgs: string, command?: CommandName): CommandArgs {
   const args: CommandArgs = {};
   
   if (!rawArgs.trim()) {
@@ -114,13 +128,26 @@ function parseArgs(rawArgs: string): CommandArgs {
       continue;
     }
     
-    // Handle --scope=path or just a path
+    // Handle --scope=path
     if (part.startsWith('--scope=')) {
       args.scope = part.substring(8);
       continue;
     }
     
-    // Treat non-flag arguments as scope
+    // Handle --plan=id
+    if (part.startsWith('--plan=')) {
+      args.planId = part.substring(7);
+      continue;
+    }
+    
+    // For approve/reject commands, first positional arg is planId
+    if (!part.startsWith('--') && !args.planId && 
+        (command === COMMANDS.APPROVE || command === COMMANDS.REJECT)) {
+      args.planId = part;
+      continue;
+    }
+    
+    // For other commands, treat non-flag arguments as scope
     if (!part.startsWith('--') && !args.scope) {
       args.scope = part;
     }
@@ -137,11 +164,15 @@ export function getCommandDescription(command: CommandName): string {
     case COMMANDS.REVIEW:
       return 'Trigger a new AI code review on this PR';
     case COMMANDS.FIX_LINTS:
-      return 'Create a PR with AI-generated lint fixes';
+      return 'Generate a change plan for lint fixes';
     case COMMANDS.ADD_TYPES:
       return 'Create a PR adding TypeScript type annotations';
     case COMMANDS.IMPROVE_DOCS:
       return 'Create a PR improving inline documentation';
+    case COMMANDS.APPROVE:
+      return 'Approve a pending change plan and create PR';
+    case COMMANDS.REJECT:
+      return 'Reject a pending change plan';
     case COMMANDS.HELP:
       return 'Show this help message';
     case COMMANDS.CONFIG:
@@ -164,6 +195,10 @@ export function getCommandUsage(command: CommandName): string {
       return '/ai-add-types [--dry-run] [--scope=path]';
     case COMMANDS.IMPROVE_DOCS:
       return '/ai-improve-docs [--dry-run] [--scope=path]';
+    case COMMANDS.APPROVE:
+      return '/ai-approve <plan-id>';
+    case COMMANDS.REJECT:
+      return '/ai-reject <plan-id>';
     case COMMANDS.HELP:
       return '/ai-help';
     case COMMANDS.CONFIG:

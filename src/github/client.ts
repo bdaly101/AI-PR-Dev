@@ -138,12 +138,13 @@ export class GitHubClient {
     issueNumber: number,
     body: string
   ) {
-    await this.octokit.issues.createComment({
+    const { data } = await this.octokit.issues.createComment({
       owner,
       repo,
       issue_number: issueNumber,
       body,
     });
+    return data;
   }
 
   async createBranch(owner: string, repo: string, branchName: string, sha: string) {
