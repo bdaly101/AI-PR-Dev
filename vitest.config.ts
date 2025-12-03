@@ -13,8 +13,10 @@ export default defineConfig({
         'node_modules/',
         'tests/',
         'dist/',
+        'dashboard/',
         'vitest.config.ts',
         '**/*.d.ts',
+        '**/*.js',
         // M7/M8/M9/M10 files - will be tested in future milestones
         'src/linting/**',
         'src/ai/changePlan.ts',

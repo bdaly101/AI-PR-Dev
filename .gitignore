@@ -8,3 +8,13 @@ coverage/
 .vscode/
 .idea/
 *.pem
+
+# Database files
+data/
+*.db
+*.db-shm
+*.db-wal
+
+# Next.js (dashboard)
+dashboard/.next/
+dashboard/node_modules/
