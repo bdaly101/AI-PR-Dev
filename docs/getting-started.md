@@ -25,12 +25,20 @@ ai-pr --version
 
 ### Method 2: Docker
 
+After the v1.0.0 release, you can pull from Docker Hub:
+
 ```bash
-# Pull the image
-docker pull ai-pr-dev:latest
+# Pull the image (replace YOUR_DOCKER_USERNAME with your Docker Hub username)
+docker pull YOUR_DOCKER_USERNAME/ai-pr-dev:latest
 
 # Run the container (see Docker section below for full setup)
-docker run -d --name ai-pr-reviewer ai-pr-dev:latest
+docker run -d --name ai-pr-reviewer -p 3000:3000 --env-file .env YOUR_DOCKER_USERNAME/ai-pr-dev:latest
+```
+
+Or build from source:
+```bash
+docker build -t ai-pr-dev .
+docker run -d --name ai-pr-reviewer -p 3000:3000 --env-file .env ai-pr-dev
 ```
 
 ### Method 3: From Source
@@ -68,7 +76,7 @@ npm run build
 7. **Generate a private key** and download it
 8. **Note your App ID** (found on the app settings page)
 
-For detailed instructions, see [GitHub App Setup Guide](github-app-setup.md).
+For detailed instructions, see [GitHub App Setup Guide](docs/github-app-setup.md).
 
 ## Step 2: Configure Environment Variables
 

@@ -104,8 +104,8 @@ fly deploy
 
 1. Clone the repository:
 ```bash
-git clone https://github.com/your-org/ai-pr-reviewer.git
-cd ai-pr-reviewer
+git clone https://github.com/bdaly101/AI-PR-Dev.git
+cd AI-PR-Dev
 ```
 
 2. Install dependencies:

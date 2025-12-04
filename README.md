@@ -6,13 +6,23 @@
 
 > AI PR Reviewer & Dev Agent is a GitHub App that automates code reviews using GPT-4, adding summaries, risk analysis, and inline comments. It also acts as an AI dev assistant that creates branches, proposes improvements, and opens clear, documented PRs—always requiring human approval.
 
-## 🚀 One-Click Deploy
+## 🚀 Quick Deploy
 
-[![Deploy on Railway](https://railway.app/button.svg)](https://railway.app/template/new?template=https://github.com/bdaly101/AI-PR-Dev)
+### Deploy on Railway
 
-**Note**: After deploying, you'll need to:
+1. Connect your repository: [Deploy on Railway](https://railway.app/new)
+2. Select this repository: `bdaly101/AI-PR-Dev`
+3. Add environment variables (see [Setup Guide](docs/getting-started.md))
+4. Deploy!
+
+### Deploy on Fly.io
+
+See the [Deployment Guide](docs/deployment.md) for detailed Fly.io instructions.
+
+**Note**: After deploying to any platform, you'll need to:
 1. Set up your GitHub App (see [Setup Guide](docs/getting-started.md))
 2. Configure environment variables with your API keys
+3. Update your GitHub App webhook URL
 
 ## ✨ Features
 
@@ -56,20 +66,24 @@ npm install ai-pr-dev
 
 ### Option 2: Docker
 
+After the v1.0.0 release, pull and run:
+
 ```bash
-# Pull the image
-docker pull ai-pr-dev:latest
+# Pull the image (replace YOUR_DOCKER_USERNAME with your Docker Hub username)
+docker pull YOUR_DOCKER_USERNAME/ai-pr-dev:latest
 
 # Run the container
 docker run -d \
   --name ai-pr-reviewer \
   -p 3000:3000 \
   -v ai-pr-data:/app/data \
-  -e GITHUB_APP_ID=your_app_id \
-  -e GITHUB_PRIVATE_KEY="..." \
-  -e GITHUB_WEBHOOK_SECRET=your_secret \
-  -e OPENAI_API_KEY=sk-... \
-  ai-pr-dev:latest
+  --env-file .env \
+  YOUR_DOCKER_USERNAME/ai-pr-dev:latest
+```
+
+Or use Docker Compose:
+```bash
+docker-compose up -d
 ```
 
 ### Option 3: From Source

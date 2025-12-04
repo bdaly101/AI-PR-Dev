@@ -18,3 +18,7 @@ data/
 # Next.js (dashboard)
 dashboard/.next/
 dashboard/node_modules/
+
+# Build artifacts
+*.tgz
+*.tar.gz
