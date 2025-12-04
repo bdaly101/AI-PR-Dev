@@ -23,7 +23,8 @@ fly auth login
 cd /path/to/AI-PR-Dev
 
 # Launch staging app (this will create fly.toml if it doesn't exist)
-fly launch --name ai-pr-reviewer-staging --region iad --no-deploy
+# Replace 'your-app-staging' with your preferred app name
+fly launch --name your-app-staging --region iad --no-deploy
 ```
 
 When prompted:
@@ -33,7 +34,7 @@ When prompted:
 ## Step 3: Create Persistent Volume
 
 ```bash
-fly volumes create ai_pr_data --size 1 --region iad --app ai-pr-reviewer-staging
+fly volumes create ai_pr_data --size 1 --region iad --app your-app-staging
 ```
 
 This creates a 1GB volume for the SQLite database.
@@ -44,17 +45,17 @@ Set all required secrets for the staging environment:
 
 ```bash
 # GitHub App Configuration
-fly secrets set GITHUB_APP_ID=<your_app_id> --app ai-pr-reviewer-staging
-fly secrets set GITHUB_PRIVATE_KEY="$(cat path/to/private-key.pem)" --app ai-pr-reviewer-staging
-fly secrets set GITHUB_WEBHOOK_SECRET=<your_webhook_secret> --app ai-pr-reviewer-staging
+fly secrets set GITHUB_APP_ID=<your_app_id> --app your-app-staging
+fly secrets set GITHUB_PRIVATE_KEY="$(cat path/to/private-key.pem)" --app your-app-staging
+fly secrets set GITHUB_WEBHOOK_SECRET=<your_webhook_secret> --app your-app-staging
 
 # AI Provider Keys
-fly secrets set OPENAI_API_KEY=<your_openai_key> --app ai-pr-reviewer-staging
+fly secrets set OPENAI_API_KEY=<your_openai_key> --app your-app-staging
 # Optional: Anthropic fallback
-fly secrets set ANTHROPIC_API_KEY=<your_anthropic_key> --app ai-pr-reviewer-staging
+fly secrets set ANTHROPIC_API_KEY=<your_anthropic_key> --app your-app-staging
 
 # Environment
-fly secrets set NODE_ENV=staging --app ai-pr-reviewer-staging
+fly secrets set NODE_ENV=staging --app your-app-staging
 ```
 
 **Note**: For `GITHUB_PRIVATE_KEY`, the key file content should include newlines. The `$(cat ...)` command handles this automatically.
@@ -62,7 +63,7 @@ fly secrets set NODE_ENV=staging --app ai-pr-reviewer-staging
 ## Step 5: Deploy
 
 ```bash
-fly deploy --app ai-pr-reviewer-staging
+fly deploy --app your-app-staging
 ```
 
 This will:
@@ -78,7 +79,7 @@ After successful deployment:
 1. Go to your GitHub App settings
 2. Update the **Webhook URL** to:
    ```
-   https://ai-pr-reviewer-staging.fly.dev/webhooks/github
+   https://your-app-staging.fly.dev/webhooks/github
    ```
 3. Save changes
 
@@ -87,7 +88,7 @@ After successful deployment:
 ### Health Check
 
 ```bash
-curl https://ai-pr-reviewer-staging.fly.dev/health
+curl https://your-app-staging.fly.dev/health
 ```
 
 Expected response:
@@ -101,7 +102,7 @@ Expected response:
 ### Check Logs
 
 ```bash
-fly logs --app ai-pr-reviewer-staging
+fly logs --app your-app-staging
 ```
 
 Look for:
@@ -131,7 +132,7 @@ Look for:
 ### Test 4: Database Persistence
 
 1. Trigger a review
-2. Restart the app: `fly apps restart ai-pr-reviewer-staging`
+2. Restart the app: `fly apps restart your-app-staging`
 3. Verify previous reviews are still accessible (no data loss)
 
 ## Monitoring
@@ -139,13 +140,13 @@ Look for:
 ### View Logs
 
 ```bash
-fly logs --app ai-pr-reviewer-staging
+fly logs --app your-app-staging
 ```
 
 ### View Metrics
 
 ```bash
-fly status --app ai-pr-reviewer-staging
+fly status --app your-app-staging
 ```
 
 Or visit the Fly.io dashboard: https://fly.io/dashboard
@@ -153,28 +154,28 @@ Or visit the Fly.io dashboard: https://fly.io/dashboard
 ### Check App Status
 
 ```bash
-fly status --app ai-pr-reviewer-staging
+fly status --app your-app-staging
 ```
 
 ## Troubleshooting
 
 ### App Won't Start
 
-- Check logs: `fly logs --app ai-pr-reviewer-staging`
-- Verify all secrets are set: `fly secrets list --app ai-pr-reviewer-staging`
-- Check volume is attached: `fly status --app ai-pr-reviewer-staging`
+- Check logs: `fly logs --app your-app-staging`
+- Verify all secrets are set: `fly secrets list --app your-app-staging`
+- Check volume is attached: `fly status --app your-app-staging`
 
 ### Webhook Not Working
 
 - Verify webhook URL is correct in GitHub App settings
-- Check webhook secret matches: `fly secrets list --app ai-pr-reviewer-staging`
+- Check webhook secret matches: `fly secrets list --app your-app-staging`
 - Review GitHub webhook delivery logs in app settings
 - Check application logs for webhook errors
 
 ### Database Issues
 
 - Verify volume is created and attached
-- Check volume size: `fly volumes list --app ai-pr-reviewer-staging`
+- Check volume size: `fly volumes list --app your-app-staging`
 - Ensure `DATABASE_PATH` environment variable points to `/app/data/app.db`
 
 ## Next Steps

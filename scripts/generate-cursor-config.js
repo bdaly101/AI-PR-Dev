@@ -28,14 +28,18 @@ if (fs.existsSync(envPath)) {
   envContent.split('\n').forEach((line) => {
     const trimmed = line.trim();
     if (trimmed && !trimmed.startsWith('#')) {
-      const [key, ...valueParts] = trimmed.split('=');
-      if (key && valueParts.length > 0) {
-        const value = valueParts.join('=').replace(/^["']|["']$/g, '');
-        if (key === 'GITHUB_APP_ID' || 
-            key === 'GITHUB_PRIVATE_KEY' || 
-            key === 'OPENAI_API_KEY' || 
-            key === 'ANTHROPIC_API_KEY') {
-          CONFIG_TEMPLATE.mcpServers['ai-pr-reviewer'].env[key] = value;
+      // Remove inline comments (everything after # not in quotes)
+      const withoutInlineComment = trimmed.split('#')[0].trim();
+      if (withoutInlineComment) {
+        const [key, ...valueParts] = withoutInlineComment.split('=');
+        if (key && valueParts.length > 0) {
+          const value = valueParts.join('=').trim().replace(/^["']|["']$/g, '');
+          if (key === 'GITHUB_APP_ID' || 
+              key === 'GITHUB_PRIVATE_KEY' || 
+              key === 'OPENAI_API_KEY' || 
+              key === 'ANTHROPIC_API_KEY') {
+            CONFIG_TEMPLATE.mcpServers['ai-pr-reviewer'].env[key] = value;
+          }
         }
       }
     }

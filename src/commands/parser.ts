@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { config } from '../config/env';
 
 /**
  * Supported slash commands
@@ -239,7 +240,7 @@ export function generateHelpText(): string {
   help += `/ai-fix-lints --dry-run       # Preview lint fixes\n`;
   help += `\`\`\`\n`;
   help += `\n---\n`;
-  help += `*AI PR Reviewer • [Documentation](https://github.com/bdaly101/AI-PR-Dev)*`;
+  help += `*AI PR Reviewer • [Documentation](${config.app.documentationUrl})*`;
   
   return help;
 }

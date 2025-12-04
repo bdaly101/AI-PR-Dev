@@ -85,7 +85,7 @@ devAgent:
           </div>
 
           <a
-            href="https://github.com/bdaly101/AI-PR-Dev/blob/main/docs/configuration.md"
+            href={`${process.env.NEXT_PUBLIC_REPOSITORY_URL || "https://github.com/bdaly101/AI-PR-Dev"}/blob/main/docs/configuration.md`}
             target="_blank"
             rel="noopener noreferrer"
             className="inline-flex items-center gap-2 text-sm text-violet-400 hover:text-violet-300"
@@ -110,7 +110,7 @@ devAgent:
           </p>
           <div className="flex items-center gap-4">
             <a
-              href="https://github.com/bdaly101/AI-PR-Dev"
+              href={process.env.NEXT_PUBLIC_REPOSITORY_URL || "https://github.com/bdaly101/AI-PR-Dev"}
               target="_blank"
               rel="noopener noreferrer"
               className="text-violet-400 hover:text-violet-300"

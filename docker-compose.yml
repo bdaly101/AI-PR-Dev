@@ -1,0 +1,39 @@
+version: '3.8'
+
+services:
+  ai-pr-reviewer:
+    image: ai-pr-dev:latest
+    # Or build from source:
+    # build:
+    #   context: .
+    #   dockerfile: Dockerfile
+    container_name: ai-pr-reviewer
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=production
+      - PORT=3000
+      # Add your environment variables here or use env_file
+      # - GITHUB_APP_ID=${GITHUB_APP_ID}
+      # - GITHUB_PRIVATE_KEY=${GITHUB_PRIVATE_KEY}
+      # - GITHUB_WEBHOOK_SECRET=${GITHUB_WEBHOOK_SECRET}
+      # - OPENAI_API_KEY=${OPENAI_API_KEY}
+    env_file:
+      - .env
+    volumes:
+      - ai-pr-data:/app/data
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:3000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 5s
+    labels:
+      - "com.ai-pr-reviewer.description=AI PR Reviewer & Dev Agent"
+      - "com.ai-pr-reviewer.version=1.0.0"
+
+volumes:
+  ai-pr-data:
+    driver: local
+

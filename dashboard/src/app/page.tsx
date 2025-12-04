@@ -56,7 +56,7 @@ export default async function HomePage() {
               <ArrowRight className="h-4 w-4" />
             </Link>
             <a
-              href="https://github.com/bdaly101/AI-PR-Dev"
+              href={process.env.NEXT_PUBLIC_REPOSITORY_URL || "https://github.com/bdaly101/AI-PR-Dev"}
               target="_blank"
               rel="noopener noreferrer"
               className="rounded-lg border border-zinc-700 px-6 py-3 font-medium text-white transition-colors hover:bg-zinc-800"

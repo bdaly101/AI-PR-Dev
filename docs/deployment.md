@@ -136,7 +136,7 @@ pm2 start dist/index.js --name ai-pr-reviewer
 ## GitHub App Configuration
 
 1. **Webhook URL**: Set to your deployment URL + `/webhooks/github`
-   - Example: `https://ai-pr-reviewer.fly.dev/webhooks/github`
+   - Example: `https://your-app.fly.dev/webhooks/github` (replace with your actual URL)
 
 2. **Webhook Secret**: Must match `GITHUB_WEBHOOK_SECRET` environment variable
 

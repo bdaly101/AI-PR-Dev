@@ -16,7 +16,7 @@ This guide covers deploying AI PR Reviewer to Fly.io production environment.
 cd /path/to/AI-PR-Dev
 
 # Launch production app
-fly launch --name ai-pr-reviewer --region iad --no-deploy
+fly launch --name your-app --region iad --no-deploy
 ```
 
 When prompted:
@@ -26,7 +26,7 @@ When prompted:
 ## Step 2: Create Production Volume
 
 ```bash
-fly volumes create ai_pr_data --size 5 --region iad --app ai-pr-reviewer
+fly volumes create ai_pr_data --size 5 --region iad --app your-app
 ```
 
 **Note**: Production uses a larger volume (5GB) for better performance and data retention.
@@ -37,17 +37,17 @@ Set all required secrets for production:
 
 ```bash
 # GitHub App Configuration
-fly secrets set GITHUB_APP_ID=<your_app_id> --app ai-pr-reviewer
-fly secrets set GITHUB_PRIVATE_KEY="$(cat path/to/private-key.pem)" --app ai-pr-reviewer
-fly secrets set GITHUB_WEBHOOK_SECRET=<your_webhook_secret> --app ai-pr-reviewer
+fly secrets set GITHUB_APP_ID=<your_app_id> --app your-app
+fly secrets set GITHUB_PRIVATE_KEY="$(cat path/to/private-key.pem)" --app your-app
+fly secrets set GITHUB_WEBHOOK_SECRET=<your_webhook_secret> --app your-app
 
 # AI Provider Keys
-fly secrets set OPENAI_API_KEY=<your_openai_key> --app ai-pr-reviewer
+fly secrets set OPENAI_API_KEY=<your_openai_key> --app your-app
 # Optional: Anthropic fallback
-fly secrets set ANTHROPIC_API_KEY=<your_anthropic_key> --app ai-pr-reviewer
+fly secrets set ANTHROPIC_API_KEY=<your_anthropic_key> --app your-app
 
 # Environment
-fly secrets set NODE_ENV=production --app ai-pr-reviewer
+fly secrets set NODE_ENV=production --app your-app
 ```
 
 **Important**: Use production API keys and credentials. Do not reuse staging credentials.
@@ -55,7 +55,7 @@ fly secrets set NODE_ENV=production --app ai-pr-reviewer
 ## Step 4: Deploy to Production
 
 ```bash
-fly deploy --app ai-pr-reviewer
+fly deploy --app your-app
 ```
 
 ## Step 5: Update GitHub App Webhook
@@ -65,7 +65,7 @@ Update your GitHub App webhook URL to production:
 1. Go to GitHub App settings
 2. Update **Webhook URL** to:
    ```
-   https://ai-pr-reviewer.fly.dev/webhooks/github
+   https://your-app.fly.dev/webhooks/github
    ```
 3. Save changes
 
@@ -76,19 +76,19 @@ Update your GitHub App webhook URL to production:
 ### Health Check
 
 ```bash
-curl https://ai-pr-reviewer.fly.dev/health
+curl https://your-app.fly.dev/health
 ```
 
 ### Check Logs
 
 ```bash
-fly logs --app ai-pr-reviewer
+fly logs --app your-app
 ```
 
 ### Verify Secrets
 
 ```bash
-fly secrets list --app ai-pr-reviewer
+fly secrets list --app your-app
 ```
 
 Ensure all required secrets are present (values are hidden for security).
@@ -105,13 +105,13 @@ Ensure all required secrets are present (values are hidden for security).
 ### Watch Logs
 
 ```bash
-fly logs --app ai-pr-reviewer
+fly logs --app your-app
 ```
 
 ### Check Metrics
 
 ```bash
-fly status --app ai-pr-reviewer
+fly status --app your-app
 ```
 
 Or use the Fly.io dashboard: https://fly.io/dashboard
@@ -139,17 +139,17 @@ If you need to scale:
 
 ```bash
 # Scale to multiple instances
-fly scale count 2 --app ai-pr-reviewer
+fly scale count 2 --app your-app
 
 # Increase resources
-fly scale vm shared-cpu-2x --memory 1024 --app ai-pr-reviewer
+fly scale vm shared-cpu-2x --memory 1024 --app your-app
 ```
 
 ### Backups
 
 The SQLite database is stored in a persistent volume. For additional safety:
 
-1. Periodically export database: `fly ssh console --app ai-pr-reviewer`
+1. Periodically export database: `fly ssh console --app your-app`
 2. Copy database file from `/app/data/app.db`
 3. Store backups securely
 
@@ -162,7 +162,7 @@ To deploy updates:
 git pull origin main
 
 # Deploy
-fly deploy --app ai-pr-reviewer
+fly deploy --app your-app
 ```
 
 Or use GitHub Actions workflow (if configured):
@@ -172,13 +172,13 @@ Or use GitHub Actions workflow (if configured):
 
 ### High Error Rates
 
-- Check logs for patterns: `fly logs --app ai-pr-reviewer`
+- Check logs for patterns: `fly logs --app your-app`
 - Verify API keys are valid and not rate-limited
 - Check GitHub App permissions and installation status
 
 ### Performance Issues
 
-- Monitor resource usage: `fly status --app ai-pr-reviewer`
+- Monitor resource usage: `fly status --app your-app`
 - Consider scaling if CPU/memory is high
 - Review database query performance
 
@@ -187,7 +187,7 @@ Or use GitHub Actions workflow (if configured):
 - Verify webhook URL is correct
 - Check webhook secret matches
 - Review GitHub webhook delivery logs
-- Ensure app is running: `fly status --app ai-pr-reviewer`
+- Ensure app is running: `fly status --app your-app`
 
 ## Rollback Procedure
 
@@ -195,10 +195,10 @@ If you need to rollback:
 
 ```bash
 # List recent releases
-fly releases --app ai-pr-reviewer
+fly releases --app your-app
 
 # Rollback to previous release
-fly releases rollback <release-id> --app ai-pr-reviewer
+fly releases rollback <release-id> --app your-app
 ```
 
 ## Security Checklist
@@ -214,7 +214,7 @@ fly releases rollback <release-id> --app ai-pr-reviewer
 ## Support
 
 For issues:
-1. Check logs: `fly logs --app ai-pr-reviewer`
+1. Check logs: `fly logs --app your-app`
 2. Review Fly.io status: https://status.fly.io
 3. Check GitHub App delivery logs
 4. Review application error logs

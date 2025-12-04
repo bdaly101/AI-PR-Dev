@@ -21,6 +21,10 @@ interface Config {
   database: {
     path: string;
   };
+  app: {
+    documentationUrl: string;
+    repositoryUrl: string;
+  };
 }
 
 function getEnvVar(key: string, defaultValue?: string): string {
@@ -53,5 +57,9 @@ export const config: Config = {
   },
   database: {
     path: getEnvVar('DATABASE_PATH', './data/app.db'),
+  },
+  app: {
+    documentationUrl: getEnvVar('DOCUMENTATION_URL', 'https://github.com/bdaly101/AI-PR-Dev'),
+    repositoryUrl: getEnvVar('REPOSITORY_URL', 'https://github.com/bdaly101/AI-PR-Dev'),
   },
 };

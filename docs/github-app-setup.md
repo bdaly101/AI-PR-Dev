@@ -14,8 +14,8 @@ This guide walks through creating and configuring the GitHub App required for AI
    - **GitHub App name**: `AI PR Reviewer` (or your preferred name)
    - **Homepage URL**: Your repository URL or documentation site
    - **Webhook URL**: 
-     - For staging: `https://ai-pr-reviewer-staging.fly.dev/webhooks/github`
-     - For production: `https://ai-pr-reviewer.fly.dev/webhooks/github`
+     - For staging: `https://your-app-staging.fly.dev/webhooks/github` (or your staging URL)
+     - For production: `https://your-app.fly.dev/webhooks/github` (or your production URL)
      - *Note: Update this after deployment*
    - **Webhook secret**: Generate a secure random string:
      ```bash
@@ -79,8 +79,8 @@ Once you've deployed to Fly.io:
 
 1. Go back to your GitHub App settings
 2. Update the **Webhook URL** to your deployed endpoint:
-   - Staging: `https://ai-pr-reviewer-staging.fly.dev/webhooks/github`
-   - Production: `https://ai-pr-reviewer.fly.dev/webhooks/github`
+   - Staging: `https://your-app-staging.fly.dev/webhooks/github` (or your staging URL)
+   - Production: `https://your-app.fly.dev/webhooks/github` (or your production URL)
 3. Save changes
 
 ## Verification

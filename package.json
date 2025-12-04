@@ -19,17 +19,44 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
-    "test:ui": "vitest --ui"
+    "test:ui": "vitest --ui",
+    "prepublishOnly": "npm run build"
   },
   "keywords": [
     "github",
     "ai",
     "code-review",
     "gpt-4",
-    "automation"
+    "automation",
+    "github-app",
+    "pull-request",
+    "code-reviewer",
+    "claude",
+    "openai",
+    "mcp",
+    "cursor"
   ],
   "author": "",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/bdaly101/AI-PR-Dev.git"
+  },
+  "homepage": "https://github.com/bdaly101/AI-PR-Dev#readme",
+  "bugs": {
+    "url": "https://github.com/bdaly101/AI-PR-Dev/issues"
+  },
+  "engines": {
+    "node": ">=18.0.0",
+    "npm": ">=9.0.0"
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE",
+    "docs",
+    "scripts"
+  ],
   "dependencies": {
     "@anthropic-ai/sdk": "^0.71.0",
     "@fastify/rate-limit": "^9.1.0",

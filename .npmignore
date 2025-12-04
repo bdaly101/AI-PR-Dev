@@ -1,0 +1,73 @@
+# Source files
+src/
+*.ts
+!*.d.ts
+
+# Development files
+tests/
+test/
+*.test.ts
+*.spec.ts
+coverage/
+.nyc_output/
+
+# Configuration
+.env
+.env.*
+!.env.example
+tsconfig.json
+vitest.config.ts
+*.config.js
+*.config.ts
+
+# Documentation (keep README and LICENSE)
+docs/
+!README.md
+!LICENSE
+
+# Build artifacts
+*.map
+*.log
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Git
+.git/
+.gitignore
+.gitattributes
+
+# CI/CD
+.github/
+
+# Docker
+Dockerfile
+docker-compose.yml
+.dockerignore
+
+# Database
+data/
+*.db
+*.db-shm
+*.db-wal
+
+# Dashboard (separate package)
+dashboard/
+
+# Scripts (keep only essential)
+scripts/
+!scripts/generate-cursor-config.js
+
+# Other
+CURSOR_SETUP.md
+cursor-mcp-config.example.json
+fly.toml
+
