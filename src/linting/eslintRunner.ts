@@ -1,4 +1,3 @@
-import { ESLint } from 'eslint';
 import { logger } from '../utils/logging';
 import {
   LintResults,
@@ -8,6 +7,20 @@ import {
   LintConfig,
   DEFAULT_LINT_CONFIG,
 } from './types';
+
+// ESLint types - imported separately since eslint may not be available in production
+type ESLintType = typeof import('eslint').ESLint;
+type ESLintInstance = InstanceType<ESLintType>;
+type ESLintLintResult = Awaited<ReturnType<ESLintInstance['lintText']>>[0];
+
+// Try to load eslint dynamically - it's a devDependency and may not be available in production
+let ESLint: ESLintType | null = null;
+try {
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  ESLint = require('eslint').ESLint;
+} catch {
+  logger.warn('ESLint not available - linting features will be disabled');
+}
 
 /**
  * ESLint runner for analyzing code
@@ -20,6 +33,13 @@ export class ESLintRunner {
   }
 
   /**
+   * Check if ESLint is available
+   */
+  isAvailable(): boolean {
+    return ESLint !== null;
+  }
+
+  /**
    * Lint multiple files given their paths and contents
    */
   async lintFiles(
@@ -29,6 +49,12 @@ export class ESLintRunner {
     let totalErrors = 0;
     let totalWarnings = 0;
     let totalFixable = 0;
+
+    // If ESLint is not available, return empty results
+    if (!ESLint) {
+      logger.warn('ESLint not available - skipping lint analysis');
+      return { files: [], totalErrors: 0, totalWarnings: 0, totalFixable: 0 };
+    }
 
     // Filter files by extension
     const filteredFiles = files.filter((file) => {
@@ -128,7 +154,7 @@ export class ESLintRunner {
    */
   private convertToFileLintResult(
     filePath: string,
-    eslintResult: ESLint.LintResult,
+    eslintResult: ESLintLintResult,
     source: string
   ): FileLintResult {
     const issues: LintIssue[] = eslintResult.messages.map((msg) => ({
