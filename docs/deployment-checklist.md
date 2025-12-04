@@ -7,8 +7,8 @@ This checklist guides you through completing v1 development and deploying to sta
 - [x] Create `.env.example` file
 - [x] Create `fly.toml` configuration
 - [x] Create GitHub Actions deploy workflow
-- [ ] **Commit new files** (fly.toml, .github/workflows/deploy.yml, .env.example)
-- [ ] **Merge `feature/m6-comprehensive-testing` into `main`**
+- [x] **Commit new files** (fly.toml, .github/workflows/deploy.yml, .env.example)
+- [x] **Merge feature branches into `main`**
 
 ### Files Created
 - ✅ `.env.example` - Environment variable template
@@ -22,13 +22,13 @@ This checklist guides you through completing v1 development and deploying to sta
 
 Follow the guide in [github-app-setup.md](./github-app-setup.md):
 
-- [ ] Create GitHub App
-- [ ] Configure permissions (Contents: R/W, Pull requests: R/W, Issues: R/W, Metadata: R)
-- [ ] Subscribe to events (Pull request, Issue comment)
-- [ ] Generate and save credentials:
-  - [ ] App ID
-  - [ ] Private Key (.pem file)
-  - [ ] Webhook Secret
+- [x] Create GitHub App
+- [x] Configure permissions (Contents: R/W, Pull requests: R/W, Issues: R/W, Metadata: R)
+- [x] Subscribe to events (Pull request, Issue comment)
+- [x] Generate and save credentials:
+  - [x] App ID
+  - [x] Private Key (.pem file)
+  - [x] Webhook Secret
 
 ## Phase 3: Staging Deployment
 
@@ -56,20 +56,20 @@ Follow the guide in [staging-deployment.md](./staging-deployment.md):
 
 Follow the guide in [production-deployment.md](./production-deployment.md):
 
-- [ ] Create production app: `fly launch --name your-app --region iad --no-deploy`
-- [ ] Create production volume: `fly volumes create ai_pr_data --size 5 --region iad --app your-app`
-- [ ] Set production secrets (use production API keys)
-- [ ] Deploy: `fly deploy --app your-app`
-- [ ] Update GitHub App webhook URL to production endpoint
-- [ ] Install GitHub App on target repositories
-- [ ] Monitor initial usage and verify functionality
+- [x] Create production app: `fly launch --name ai-dev-pr-reviewer --region iad --no-deploy`
+- [x] Create production volume: `fly volumes create ai_pr_data --size 5 --region iad --app ai-dev-pr-reviewer`
+- [x] Set production secrets (use production API keys)
+- [x] Deploy: `fly deploy --app ai-dev-pr-reviewer`
+- [x] Update GitHub App webhook URL to production endpoint: `https://ai-dev-pr-reviewer.fly.dev/webhooks/github`
+- [x] Install GitHub App on target repositories
+- [x] Monitor initial usage and verify functionality
 
 ## Post-Deployment
 
-- [ ] Set up Fly.io monitoring/alerts
-- [ ] Document any environment-specific configurations
-- [ ] Update README with production deployment info
-- [ ] Create runbook for common operations
+- [ ] Set up Fly.io monitoring/alerts (optional)
+- [x] Document any environment-specific configurations
+- [x] Update README with production deployment info
+- [x] Create runbook for common operations (see docs/)
 
 ## Quick Reference
 

@@ -19,9 +19,7 @@ We take security vulnerabilities seriously. If you discover a security vulnerabi
 
 ### 2. Report Privately
 
-Please report security vulnerabilities by emailing the maintainers at: **security@your-domain.com**
-
-Or, if you prefer, you can use GitHub's [Private Vulnerability Reporting](https://github.com/bdaly101/AI-PR-Dev/security/advisories/new).
+Please report security vulnerabilities using GitHub's [Private Vulnerability Reporting](https://github.com/bdaly101/AI-PR-Dev/security/advisories/new).
 
 ### 3. Include Details
 
@@ -156,8 +154,7 @@ We regularly:
 ## Contact
 
 For security-related questions or concerns:
-- Email: security@your-domain.com
-- GitHub Security Advisories: [View Advisories](https://github.com/bdaly101/AI-PR-Dev/security/advisories)
+- GitHub Security Advisories: [Report a Vulnerability](https://github.com/bdaly101/AI-PR-Dev/security/advisories/new) | [View Advisories](https://github.com/bdaly101/AI-PR-Dev/security/advisories)
 
 ## Acknowledgments
 
@@ -165,5 +162,5 @@ We appreciate the security research community's efforts to keep this project sec
 
 ---
 
-**Last Updated**: 2025-01-XX
+**Last Updated**: 2024-12-04
 
