@@ -1,6 +1,6 @@
 {
   "name": "ai-pr-dev",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "AI PR Reviewer & Dev Agent - A GitHub App that automates code reviews using GPT-4 and responds to slash commands",
   "main": "dist/index.js",
   "bin": {

@@ -6,13 +6,14 @@ import { suggestionsCommand } from './commands/suggestions';
 import { recommendCommand } from './commands/recommend';
 import { createIssueCommand } from './commands/create-issue';
 import { waitCommand } from './commands/wait';
+import { getVersion } from '../utils/version';
 
 const program = new Command();
 
 program
   .name('ai-pr')
   .description('CLI tool for AI PR Reviewer')
-  .version('1.0.0');
+  .version(getVersion());
 
 /**
  * Parse owner/repo#pr format
