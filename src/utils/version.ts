@@ -6,7 +6,7 @@
  * Get the current version from package.json
  */
 export function getVersion(): string {
-  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  // eslint-disable-next-line @typescript-eslint/no-require-imports, @typescript-eslint/no-var-requires
   const pkg = require('../../package.json');
   return pkg.version;
 }
@@ -15,7 +15,7 @@ export function getVersion(): string {
  * Get application info
  */
 export function getAppInfo(): { name: string; version: string; description: string } {
-  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  // eslint-disable-next-line @typescript-eslint/no-require-imports, @typescript-eslint/no-var-requires
   const pkg = require('../../package.json');
   return {
     name: pkg.name,

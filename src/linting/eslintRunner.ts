@@ -16,7 +16,7 @@ type ESLintLintResult = Awaited<ReturnType<ESLintInstance['lintText']>>[0];
 // Try to load eslint dynamically - it's a devDependency and may not be available in production
 let ESLint: ESLintType | null = null;
 try {
-  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  // eslint-disable-next-line @typescript-eslint/no-require-imports, @typescript-eslint/no-var-requires
   ESLint = require('eslint').ESLint;
 } catch {
   logger.warn('ESLint not available - linting features will be disabled');
