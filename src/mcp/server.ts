@@ -1,7 +1,11 @@
 import { Server } from '@modelcontextprotocol/sdk/server/index.js';
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
-import { MCP_TOOLS, executeMCPTool } from './tools';
-import { logger } from '../utils/logging';
+import {
+  CallToolRequestSchema,
+  ListToolsRequestSchema,
+} from '@modelcontextprotocol/sdk/types.js';
+import { MCP_TOOLS, executeMCPTool } from './tools.js';
+import { createMCPLogger } from '../utils/logging.js';
 
 /**
  * MCP Server for Cursor IDE integration
@@ -9,9 +13,13 @@ import { logger } from '../utils/logging';
  * This server exposes tools that allow Cursor AI to interact with
  * the AI PR Reviewer - querying review status, getting recommendations,
  * creating issues, etc.
+ * 
+ * IMPORTANT: This server uses stderr for logging because stdout is reserved
+ * for JSON-RPC communication with the MCP client.
  */
 export async function startMCPServer(): Promise<void> {
-  const mcpLogger = logger.child({ component: 'mcp-server' });
+  // Use stderr logger to avoid interfering with JSON-RPC on stdout
+  const mcpLogger = createMCPLogger('ai-pr-reviewer').child({ component: 'mcp-server' });
   
   // Create MCP server
   const server = new Server(
@@ -27,8 +35,7 @@ export async function startMCPServer(): Promise<void> {
   );
 
   // List available tools
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  (server as any).setRequestHandler('tools/list', async () => {
+  server.setRequestHandler(ListToolsRequestSchema, async () => {
     mcpLogger.debug('List tools requested');
     return {
       tools: MCP_TOOLS,
@@ -36,14 +43,14 @@ export async function startMCPServer(): Promise<void> {
   });
 
   // Execute tool
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  (server as any).setRequestHandler('tools/call', async (request: any) => {
+  server.setRequestHandler(CallToolRequestSchema, async (request) => {
     const { name, arguments: args } = request.params;
     mcpLogger.info({ tool: name }, 'Tool call requested');
-
+    
     try {
       const result = await executeMCPTool(name, args || {});
       mcpLogger.debug({ tool: name }, 'Tool executed successfully');
+      
       return {
         content: [
           {
@@ -54,6 +61,7 @@ export async function startMCPServer(): Promise<void> {
       };
     } catch (error) {
       mcpLogger.error({ error, tool: name }, 'Tool execution failed');
+      
       return {
         content: [
           {

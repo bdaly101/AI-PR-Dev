@@ -5,12 +5,18 @@ const isDevelopment = config.server.nodeEnv === 'development';
 
 /**
  * Create a Pino logger instance
+ * 
+ * @param name - Logger name
+ * @param useStderr - If true, logs to stderr (required for MCP servers to avoid interfering with JSON-RPC on stdout)
  */
-export function createLogger(name?: string): pino.Logger {
+export function createLogger(name?: string, useStderr: boolean = false): pino.Logger {
+  // For MCP mode, we must log to stderr to keep stdout clean for JSON-RPC
+  const destination = useStderr ? pino.destination(2) : undefined; // fd 2 = stderr
+  
   return pino({
     name: name || 'ai-pr-reviewer',
     level: isDevelopment ? 'debug' : 'info',
-    transport: isDevelopment
+    transport: isDevelopment && !useStderr
       ? {
           target: 'pino-pretty',
           options: {
@@ -26,7 +32,14 @@ export function createLogger(name?: string): pino.Logger {
       },
     },
     timestamp: pino.stdTimeFunctions.isoTime,
-  });
+  }, destination);
+}
+
+/**
+ * Create a logger for MCP server (writes to stderr)
+ */
+export function createMCPLogger(name?: string): pino.Logger {
+  return createLogger(name, true);
 }
 
 /**
